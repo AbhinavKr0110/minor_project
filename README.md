@@ -94,21 +94,21 @@ $$\mathbb{P}(\text{Early Exit Error} \mid \Delta_t \ge \theta) \le \exp\left( -\
 ```text
 minor_project/
 ├── .env.example                    # Template for Groq / OpenAI API credentials
+├── .gitignore                      # Git ignore rules for environments, secrets, and caches
 ├── requirements.txt                # Production Python dependencies
-├── 2203.11171v4.pdf                # Reference paper: Wang et al. (ICLR 2023)
 │
 ├── client_wrapper.py               # Asynchronous rate-limited client with backoff
 ├── extractor.py                    # 6-stage robust regex & AST answer normalizer
 ├── ca_asc_evaluator.py             # CA-ASC stopping policy & high-throughput replay engine
 ├── evaluate.py                     # GSM8K evaluation harness with sample trace caching
 ├── ablation_study.py               # Offline policy & parameter sweeping CLI
+├── run_paper_experiments.py        # Asynchronous experiment runner
 │
 ├── plot_results.py                 # Matplotlib generator for allocation & Pareto curves
 ├── plot_paper_results.py           # Matplotlib generator for scaling & comparison plots
 │
 ├── generate_presentation_pptx.py   # Automated 16-slide PowerPoint deck generator
 ├── presentation.pptx               # Official Mid-Term Evaluation Presentation Deck
-├── presentation.html               # Interactive, responsive web slide deck
 │
 └── results/
     ├── full_paper_benchmark.jsonl  # Cached trace log (30 questions × 6 samples)
@@ -174,10 +174,6 @@ Rebuild the 16-slide PowerPoint presentation ([`presentation.pptx`](file:///User
 ```bash
 python generate_presentation_pptx.py
 ```
-Or open the interactive web presentation in your browser:
-```bash
-open presentation.html
-```
 
 ---
 
@@ -189,7 +185,7 @@ open presentation.html
 - [x] Robust 6-stage extraction cascade eliminating `NO_PRED` parsing dropouts (100% recovery).
 - [x] Empirical demonstration of **48.4% token compute reduction** on GSM8K with **0.0% regret**.
 - [x] High-throughput offline replay simulator enabling millisecond parameter sweeping.
-- [x] Complete 16-slide Mid-Term Evaluation slide deck (`presentation.pptx` & `presentation.html`).
+- [x] Complete 16-slide Mid-Term Evaluation PowerPoint slide deck (`presentation.pptx`).
 
 ### Final-Term Research Objectives (Nov 2026 – May 2027)
 - [ ] **Multi-Benchmark Generalization:** Extend empirical validation to SVAMP, MATH, and AQuA-RAT.
