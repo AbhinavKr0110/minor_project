@@ -1,14 +1,17 @@
 """
 generate_presentation_pptx.py
-Produces a professional, high-impact 16-slide PowerPoint presentation (.pptx)
-for B.Tech CSE Minor Project Mid-Term Evaluation at IIIT Ranchi.
-Features:
-- Fixed 16:9 widescreen canvas (13.333" x 7.50")
-- Zero text overlap: strictly bounded vertical content bands (top: 1.50" to 6.65", footer: 6.85")
-- Native card shapes with integrated text_frames (vertical_anchor = MSO_ANCHOR.TOP)
-- Embedded empirical figures on Slides 11, 12, and 13 with spacious side-panels
-- Strict academic color palette (Dark theme on Slides 1 & 16; Light theme on Slides 2-15)
-- Full team & supervisor credentials accurately reflected
+Rebuilds a unified, humanized, and highly readable 16-slide PowerPoint presentation (.pptx)
+designed specifically for faculty defense at IIIT Ranchi:
+"Adaptive Self-Consistency in Large Language Models".
+
+Design Principles:
+- Single cohesive, unified aesthetic across ALL 16 slides (clean, high-contrast light theme throughout)
+- Zero dark slides: Front page and last page now use the same clean, professional light theme as the rest of the deck
+- Humanized, plain-English academic explanations (designed for faculty evaluation)
+- Clean, readable mathematical formulas rendered with standard mathematical symbols (no broken LaTeX code or raw syntax)
+- Zero text overlap: strict vertical bounding (content: 1.45" to 6.65", footer at 6.85")
+- Native shapes with integrated text_frames (vertical_anchor = MSO_ANCHOR.TOP)
+- Embedded real project empirical figures on Slides 11, 12, and 13 with spacious side-panels
 """
 
 import os
@@ -19,38 +22,39 @@ from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 
 # -----------------------------------------------------------------------------
-# Color Palette
+# Unified Color Palette (Consistent across ALL 16 slides)
 # -----------------------------------------------------------------------------
-NAVY_DARK = RGBColor(11, 19, 43)        # #0B132B
-NAVY_CARD = RGBColor(28, 37, 65)        # #1C2541
-WHITE = RGBColor(255, 255, 255)
-OFF_WHITE = RGBColor(248, 250, 252)     # #F8FAFC
-CARD_BG = RGBColor(255, 255, 255)
-CARD_BORDER = RGBColor(226, 232, 240)   # #E2E8F0
-TEXT_MAIN = RGBColor(15, 23, 42)        # #0F172A
-TEXT_MUTED = RGBColor(71, 85, 105)      # #475569
-TEXT_LIGHT = RGBColor(148, 163, 184)    # #94A3B8
+BG_PAGE = RGBColor(248, 250, 252)       # #F8FAFC (Soft, clean off-white background)
+CARD_BG = RGBColor(255, 255, 255)       # #FFFFFF (Crisp white card container)
+CARD_BORDER = RGBColor(226, 232, 240)   # #E2E8F0 (Subtle slate border)
+CARD_BORDER_BLUE = RGBColor(191, 219, 254) # #BFDBFE (Blue accented border)
 
-BLUE_PRIMARY = RGBColor(37, 99, 235)    # #2563EB
-BLUE_DARK = RGBColor(30, 64, 175)       # #1E40AF
-BLUE_TINT = RGBColor(239, 246, 255)     # #EFF6FF
-CYAN_ACCENT = RGBColor(56, 189, 248)    # #38BDF8
-EMERALD_GREEN = RGBColor(5, 150, 105)   # #059669
-GREEN_TINT = RGBColor(240, 253, 244)    # #F0FDF4
-RED_ACCENT = RGBColor(220, 38, 38)      # #DC2626
-AMBER_ACCENT = RGBColor(217, 119, 6)    # #D97706
-PURPLE_ACCENT = RGBColor(124, 58, 237)  # #7C3AED
+TEXT_HEAD = RGBColor(15, 23, 42)        # #0F172A (Deep slate for titles)
+TEXT_BODY = RGBColor(51, 65, 85)        # #334155 (High-contrast slate for readable body text)
+TEXT_MUTED = RGBColor(100, 116, 139)    # #64748B (Secondary / subtitle text)
+
+BLUE_ACCENT = RGBColor(37, 99, 235)     # #2563EB (Primary blue highlight)
+BLUE_DARK = RGBColor(30, 64, 175)       # #1E40AF (Deep navy for emphasis)
+BLUE_TINT = RGBColor(239, 246, 255)     # #EFF6FF (Light blue background for formula callouts)
+
+GREEN_ACCENT = RGBColor(5, 150, 105)    # #059669 (Emerald for success / savings)
+GREEN_TINT = RGBColor(240, 253, 244)    # #F0FDF4 (Light green background)
+
+AMBER_ACCENT = RGBColor(217, 119, 6)    # #D97706 (Amber for cautions / medium tier)
+RED_ACCENT = RGBColor(220, 38, 38)      # #DC2626 (Red for greedy flaws / hard tier)
+PURPLE_ACCENT = RGBColor(109, 40, 217)  # #6D28D9 (Purple for secondary highlights)
 
 FONT_FAMILY = "Arial"
 
 
-def create_deck():
+def build_faculty_deck():
     prs = Presentation()
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
     blank_layout = prs.slide_layouts[6]
 
-    def set_slide_background(slide, color):
+    # Helper: Set slide background color
+    def set_slide_background(slide, color=BG_PAGE):
         bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, Inches(13.333), Inches(7.5))
         bg.fill.solid()
         bg.fill.fore_color.rgb = color
@@ -59,60 +63,62 @@ def create_deck():
         slide.shapes._spTree.insert(2, bg._element)
         return bg
 
-    def add_header(slide, category: str, title: str, slide_num: int, is_dark=False):
+    # Helper: Add unified top header (Slides 2 to 15)
+    def add_slide_header(slide, category_tag: str, main_title: str, slide_num: int):
         # Category Tag
-        cat_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.4), Inches(8.5), Inches(0.28))
+        cat_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.38), Inches(8.5), Inches(0.28))
         tf = cat_box.text_frame
         tf.word_wrap = True
         tf.margin_top = tf.margin_bottom = tf.margin_left = tf.margin_right = 0
         p = tf.paragraphs[0]
-        p.text = category.upper()
+        p.text = category_tag.upper()
         p.font.name = FONT_FAMILY
         p.font.size = Pt(9.5)
         p.font.bold = True
-        p.font.color.rgb = CYAN_ACCENT if is_dark else BLUE_PRIMARY
+        p.font.color.rgb = BLUE_ACCENT
 
-        # Title
-        t_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.68), Inches(9.2), Inches(0.55))
-        tf = t_box.text_frame
-        tf.word_wrap = True
-        tf.margin_top = tf.margin_bottom = tf.margin_left = tf.margin_right = 0
-        p = tf.paragraphs[0]
-        p.text = title
-        p.font.name = FONT_FAMILY
-        p.font.size = Pt(19)
-        p.font.bold = True
-        p.font.color.rgb = WHITE if is_dark else TEXT_MAIN
+        # Slide Main Title
+        t_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.66), Inches(9.2), Inches(0.55))
+        tf_t = t_box.text_frame
+        tf_t.word_wrap = True
+        tf_t.margin_top = tf_t.margin_bottom = tf_t.margin_left = tf_t.margin_right = 0
+        p_t = tf_t.paragraphs[0]
+        p_t.text = main_title
+        p_t.font.name = FONT_FAMILY
+        p_t.font.size = Pt(19)
+        p_t.font.bold = True
+        p_t.font.color.rgb = TEXT_HEAD
 
-        # Context Tag (Right)
-        ctx_box = slide.shapes.add_textbox(Inches(9.5), Inches(0.60), Inches(3.033), Inches(0.4))
-        tf = ctx_box.text_frame
-        tf.word_wrap = True
-        p = tf.paragraphs[0]
-        p.alignment = PP_ALIGN.RIGHT
-        p.text = "IIIT Ranchi • CSE Minor Project"
-        p.font.name = FONT_FAMILY
-        p.font.size = Pt(10)
-        p.font.bold = True
-        p.font.color.rgb = TEXT_LIGHT if is_dark else TEXT_MUTED
+        # Right Academic Label
+        tag_box = slide.shapes.add_textbox(Inches(9.2), Inches(0.58), Inches(3.333), Inches(0.40))
+        tf_tag = tag_box.text_frame
+        tf_tag.word_wrap = True
+        p_tag = tf_tag.paragraphs[0]
+        p_tag.alignment = PP_ALIGN.RIGHT
+        p_tag.text = "IIIT Ranchi • CSE Minor Project"
+        p_tag.font.name = FONT_FAMILY
+        p_tag.font.size = Pt(10)
+        p_tag.font.bold = True
+        p_tag.font.color.rgb = TEXT_MUTED
 
-        # Subtle Header Divider
-        line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(1.30), Inches(11.733), Inches(0.015))
+        # Subtle Header Line
+        line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(1.26), Inches(11.733), Inches(0.015))
         line.fill.solid()
-        line.fill.fore_color.rgb = RGBColor(51, 65, 85) if is_dark else CARD_BORDER
-        line.line.color.rgb = RGBColor(51, 65, 85) if is_dark else CARD_BORDER
+        line.fill.fore_color.rgb = CARD_BORDER
+        line.line.color.rgb = CARD_BORDER
 
-        # Footer (Placed strictly at 6.85" with 0.35" height, no content allowed above 6.70")
+        # Safe Footer (strictly at 6.85" to guarantee zero overlap)
         f_box = slide.shapes.add_textbox(Inches(0.8), Inches(6.85), Inches(11.733), Inches(0.35))
         tf_f = f_box.text_frame
         tf_f.margin_top = tf_f.margin_bottom = tf_f.margin_left = tf_f.margin_right = 0
         p_f = tf_f.paragraphs[0]
-        p_f.text = f"Slide {slide_num} / 16  |  Adaptive Self-Consistency in LLMs  |  Mid-Term Evaluation (Nov 12, 2026)"
+        p_f.text = f"Slide {slide_num} of 16  |  Adaptive Self-Consistency in LLMs  |  Mid-Term Evaluation (Nov 12, 2026)"
         p_f.font.name = FONT_FAMILY
         p_f.font.size = Pt(9.5)
-        p_f.font.color.rgb = TEXT_LIGHT if is_dark else TEXT_MUTED
+        p_f.font.color.rgb = TEXT_MUTED
 
-    def add_card_shape(slide, left, top, width, height, fill_color=CARD_BG, border_color=CARD_BORDER):
+    # Helper: Create card shape with top vertical anchor
+    def create_card(slide, left, top, width, height, fill_color=CARD_BG, border_color=CARD_BORDER):
         card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
         card.fill.solid()
         card.fill.fore_color.rgb = fill_color
@@ -121,245 +127,265 @@ def create_deck():
         tf = card.text_frame
         tf.word_wrap = True
         tf.vertical_anchor = MSO_ANCHOR.TOP
-        tf.margin_left = Inches(0.18)
-        tf.margin_right = Inches(0.18)
-        tf.margin_top = Inches(0.16)
-        tf.margin_bottom = Inches(0.16)
+        tf.margin_left = Inches(0.20)
+        tf.margin_right = Inches(0.20)
+        tf.margin_top = Inches(0.18)
+        tf.margin_bottom = Inches(0.18)
         return card
 
     # =========================================================================
-    # SLIDE 1: TITLE SLIDE (Dark Theme)
+    # SLIDE 1: TITLE SLIDE (Cohesive Light Theme)
     # =========================================================================
     s1 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s1, NAVY_DARK)
+    set_slide_background(s1, BG_PAGE)
 
-    # Category Pill
-    pill = add_card_shape(s1, Inches(0.8), Inches(0.65), Inches(4.5), Inches(0.36), fill_color=NAVY_CARD, border_color=BLUE_PRIMARY)
+    # University & Department Tag (Centered Pill)
+    pill = create_card(s1, Inches(0.8), Inches(0.65), Inches(5.8), Inches(0.40), fill_color=CARD_BG, border_color=CARD_BORDER_BLUE)
     p = pill.text_frame.paragraphs[0]
     p.text = "B.TECH CSE MINOR PROJECT • MID-TERM EVALUATION"
-    p.font.size = Pt(9.5)
+    p.font.name = FONT_FAMILY
+    p.font.size = Pt(10)
     p.font.bold = True
-    p.font.color.rgb = CYAN_ACCENT
+    p.font.color.rgb = BLUE_ACCENT
     p.alignment = PP_ALIGN.CENTER
 
-    # Main Title
-    t_box = s1.shapes.add_textbox(Inches(0.8), Inches(1.15), Inches(11.733), Inches(1.4))
+    # Title & Subtitle Box
+    t_box = s1.shapes.add_textbox(Inches(0.8), Inches(1.20), Inches(11.733), Inches(2.1))
     tf = t_box.text_frame
     tf.word_wrap = True
     p1 = tf.paragraphs[0]
-    p1.text = "Adaptive Self-Consistency\nin Large Language Models"
-    p1.font.size = Pt(34)
+    p1.text = "Adaptive Self-Consistency in Large Language Models"
+    p1.font.name = FONT_FAMILY
+    p1.font.size = Pt(32)
     p1.font.bold = True
-    p1.font.color.rgb = WHITE
-    p1.space_after = Pt(6)
+    p1.font.color.rgb = TEXT_HEAD
+    p1.space_after = Pt(8)
 
     p2 = tf.add_paragraph()
-    p2.text = "Dynamic Consensus-Driven Inference for Efficient Mathematical & Multi-Step Reasoning"
+    p2.text = "Dynamic Early Stopping for Efficient and Accurate Multi-Step Reasoning"
+    p2.font.name = FONT_FAMILY
     p2.font.size = Pt(16)
-    p2.font.color.rgb = TEXT_LIGHT
+    p2.font.color.rgb = BLUE_DARK
+    p2.space_after = Pt(4)
+
+    p3 = tf.add_paragraph()
+    p3.text = "Department of Computer Science & Engineering, Indian Institute of Information Technology (IIIT) Ranchi"
+    p3.font.name = FONT_FAMILY
+    p3.font.size = Pt(13)
+    p3.font.color.rgb = TEXT_MUTED
 
     # Team & Supervisor Side-by-Side Cards (Top: 3.55", Height: 2.70", Bottom: 6.25")
-    card_team = add_card_shape(s1, Inches(0.8), Inches(3.55), Inches(5.7), Inches(2.70), fill_color=NAVY_CARD, border_color=RGBColor(51, 65, 85))
+    card_team = create_card(s1, Inches(0.8), Inches(3.55), Inches(5.7), Inches(2.70), fill_color=CARD_BG, border_color=CARD_BORDER)
     tf = card_team.text_frame
     p = tf.paragraphs[0]
     p.text = "STUDENT INVESTIGATORS"
     p.font.size = Pt(11)
     p.font.bold = True
-    p.font.color.rgb = CYAN_ACCENT
+    p.font.color.rgb = BLUE_ACCENT
     p.space_after = Pt(10)
 
-    team_members = [
+    students = [
         ("Pankaj Jangid", "Reg: 2023UG3004"),
         ("Aagman", "Reg: 2023UG3027"),
         ("Abhinav Kumar", "Reg: 2023UG4018")
     ]
-    for name, reg in team_members:
+    for name, reg in students:
         pm = tf.add_paragraph()
         pm.text = f"• {name}  "
-        pm.font.size = Pt(13)
+        pm.font.size = Pt(12.5)
         pm.font.bold = True
-        pm.font.color.rgb = WHITE
+        pm.font.color.rgb = TEXT_HEAD
         pm.space_after = Pt(6)
         r = pm.add_run()
         r.text = f"({reg})"
         r.font.bold = False
-        r.font.color.rgb = TEXT_LIGHT
+        r.font.color.rgb = TEXT_MUTED
 
-    card_sup = add_card_shape(s1, Inches(6.833), Inches(3.55), Inches(5.7), Inches(2.70), fill_color=NAVY_CARD, border_color=RGBColor(51, 65, 85))
+    card_sup = create_card(s1, Inches(6.833), Inches(3.55), Inches(5.7), Inches(2.70), fill_color=CARD_BG, border_color=CARD_BORDER)
     tf = card_sup.text_frame
     p = tf.paragraphs[0]
-    p.text = "FACULTY SUPERVISOR & INSTITUTION"
+    p.text = "PROJECT SUPERVISOR & INSTITUTION"
     p.font.size = Pt(11)
     p.font.bold = True
-    p.font.color.rgb = CYAN_ACCENT
+    p.font.color.rgb = BLUE_ACCENT
     p.space_after = Pt(10)
 
     p = tf.add_paragraph()
     p.text = "Dr. Bharat Singh"
     p.font.size = Pt(15)
     p.font.bold = True
-    p.font.color.rgb = WHITE
+    p.font.color.rgb = TEXT_HEAD
     p.space_after = Pt(4)
 
     p = tf.add_paragraph()
     p.text = "Assistant Professor\nDepartment of Computer Science & Engineering"
     p.font.size = Pt(12)
-    p.font.color.rgb = TEXT_LIGHT
+    p.font.color.rgb = TEXT_BODY
     p.space_after = Pt(6)
 
     p = tf.add_paragraph()
     p.text = "Indian Institute of Information Technology (IIIT) Ranchi"
     p.font.size = Pt(12.5)
     p.font.bold = True
-    p.font.color.rgb = WHITE
+    p.font.color.rgb = BLUE_DARK
 
     # Footer
     f_box = s1.shapes.add_textbox(Inches(0.8), Inches(6.85), Inches(11.733), Inches(0.35))
     p = f_box.text_frame.paragraphs[0]
-    p.text = "Mid-Term Evaluation Date: November 12, 2026  |  Department of CSE, IIIT Ranchi"
-    p.font.size = Pt(10)
-    p.font.color.rgb = TEXT_LIGHT
+    p.text = "Mid-Term Evaluation Date: November 12, 2026  |  IIIT Ranchi CSE Minor Project"
+    p.font.size = Pt(9.5)
+    p.font.color.rgb = TEXT_MUTED
 
     # =========================================================================
-    # SLIDE 2: MOTIVATION & REASONING BOTTLENECK
+    # SLIDE 2: THE PROBLEM (Humanized, Intuitive)
     # =========================================================================
     s2 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s2, OFF_WHITE)
-    add_header(s2, "Motivation & Background", "The Reasoning Bottleneck in Autoregressive LLMs", 2)
+    set_slide_background(s2, BG_PAGE)
+    add_slide_header(s2, "Motivation & Problem Statement", "The Problem: Why LLMs Make Mistakes in Math Problems", 2)
 
-    # Left: Greedy Failure Mode (Top: 1.50", Height: 5.10", Bottom: 6.60")
-    c1 = add_card_shape(s2, Inches(0.8), Inches(1.50), Inches(5.7), Inches(5.10))
+    # Left: The Greedy Flaw
+    c1 = create_card(s2, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
     tf = c1.text_frame
     p = tf.paragraphs[0]
-    p.text = "Brittleness of Greedy Decoding (T = 0)"
-    p.font.size = Pt(14)
+    p.text = "The Flaw with Standard Single-Answer (Greedy) Decoding"
+    p.font.size = Pt(13.5)
     p.font.bold = True
     p.font.color.rgb = RED_ACCENT
     p.space_after = Pt(10)
 
-    bullets2_left = [
-        ("Chain-of-Thought (CoT) Promise: ", "Decomposing problems into step-by-step intermediate rationales (r -> a) enables multi-step arithmetic reasoning."),
-        ("Compounding Error Cascade: ", "Tokens are generated conditioned on past tokens. An arithmetic or logic slip in step 2 irrevocably derails the terminal answer."),
-        ("Local Optima Trap: ", "Greedy search strictly commits to the immediate argmax token probability, blind to globally coherent solution trees."),
-        ("Uncalibrated Confidence: ", "LLMs frequently output flawed solutions with high token probability, giving zero internal signal of hallucination.")
+    points2_left = [
+        ("Step-by-Step Thinking (CoT): ", "LLMs are prompted to write out their reasoning before giving the final number. This works well, but only if every step is correct."),
+        ("No Second Chances: ", "In greedy decoding, the model always picks the single most probable word. If it makes a small arithmetic slip in Step 2, every step afterwards is ruined."),
+        ("Compounding Mistakes: ", "Like a student making a sign error on line 2 of an exam, the final answer ends up completely wrong despite a good overall plan."),
+        ("False Confidence: ", "The model cannot tell you when it made a mistake — it outputs the wrong final number with the exact same high confidence as a correct one.")
     ]
-    for b_title, b_desc in bullets2_left:
+    for title, desc in points2_left:
         p = tf.add_paragraph()
-        p.text = "• " + b_title
+        p.text = "• " + title
         p.font.size = Pt(11)
         p.font.bold = True
-        p.font.color.rgb = TEXT_MAIN
-        p.space_after = Pt(6)
+        p.font.color.rgb = TEXT_HEAD
         r = p.add_run()
-        r.text = b_desc
+        r.text = desc
         r.font.bold = False
-        r.font.color.rgb = TEXT_MUTED
+        r.font.color.rgb = TEXT_BODY
+        p.space_after = Pt(6)
 
-    # Right: Diversity Filter
-    c2 = add_card_shape(s2, Inches(6.833), Inches(1.50), Inches(5.7), Inches(5.10))
+    # Right: Real Question Example
+    c2 = create_card(s2, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
     tf = c2.text_frame
     p = tf.paragraphs[0]
-    p.text = "Reasoning Diversity as an Error Filter"
-    p.font.size = Pt(14)
+    p.text = "Real Example: How Diverse Thinking Solves the Problem"
+    p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = BLUE_PRIMARY
-    p.space_after = Pt(10)
+    p.font.color.rgb = BLUE_DARK
+    p.space_after = Pt(8)
 
-    p_math_title = tf.add_paragraph()
-    p_math_title.text = "Diverse Solution Pathways to GSM8K Problem:"
-    p_math_title.font.size = Pt(11)
-    p_math_title.font.bold = True
-    p_math_title.font.color.rgb = TEXT_MAIN
-    p_math_title.space_after = Pt(6)
+    p_q = tf.add_paragraph()
+    p_q.text = "Question: Janet has 16 eggs. She eats 3 for breakfast and bakes muffins with 4. She sells the rest for $2 each. How much does she make?"
+    p_q.font.size = Pt(10.5)
+    p_q.font.italic = True
+    p_q.font.color.rgb = TEXT_BODY
+    p_q.space_after = Pt(10)
 
-    examples2 = [
-        "Path 1:  16 - (3 + 4) = 9;  9 * $2 = $18  [Correct ✓]",
-        "Path 2:  16 - 3 = 13;  13 - 4 = 9;  9 * $2 = $18  [Correct ✓]",
-        "Path 3:  16 * $2 = $32;  $32 - 7 = $25  [Flawed ✗]"
+    paths2 = [
+        ("Reasoning Path 1 (Subtraction first):", "16 - 3 = 13 remaining. 13 - 4 = 9 eggs left. 9 * $2 = $18.", "Answer: 18 (Correct ✓)", GREEN_ACCENT),
+        ("Reasoning Path 2 (Grouping used):", "Total used: 3 + 4 = 7 eggs. Left: 16 - 7 = 9 eggs. 9 * $2 = $18.", "Answer: 18 (Correct ✓)", GREEN_ACCENT),
+        ("Reasoning Path 3 (Arithmetic slip):", "Eggs left: 16 - 7 = 8 eggs. 8 * $2 = $16.", "Answer: 16 (Flawed ✗)", RED_ACCENT)
     ]
-    for ex in examples2:
-        pe = tf.add_paragraph()
-        pe.text = ex
-        pe.font.size = Pt(10.5)
-        pe.font.name = "Courier New"
-        pe.font.bold = True
-        pe.font.color.rgb = BLUE_DARK if "✓" in ex else RED_ACCENT
-        pe.space_after = Pt(4)
+    for p_title, p_desc, p_ans, p_col in paths2:
+        p = tf.add_paragraph()
+        p.text = p_title
+        p.font.size = Pt(10.5)
+        p.font.bold = True
+        p.font.color.rgb = TEXT_HEAD
+        r = tf.add_paragraph()
+        r.text = p_desc + "  " + p_ans
+        r.font.size = Pt(10.5)
+        r.font.color.rgb = p_col
+        r.space_after = Pt(6)
 
-    p_exp = tf.add_paragraph()
-    p_exp.text = "\nCore Discovery:"
-    p_exp.font.size = Pt(11)
-    p_exp.font.bold = True
-    p_exp.font.color.rgb = TEXT_MAIN
-    p_exp.space_after = Pt(2)
-
-    p_exp_txt = tf.add_paragraph()
-    p_exp_txt.text = "Valid mathematical proofs arrive at the exact same terminal consensus despite exploring different intermediate routes. Incorrect solutions disperse into idiosyncratic, isolated error tails."
-    p_exp_txt.font.size = Pt(11)
-    p_exp_txt.font.color.rgb = TEXT_MUTED
+    p_takeaway = tf.add_paragraph()
+    p_takeaway.text = "The Key Intuition: Correct reasoning paths agree on the same answer ($18). Incorrect attempts make different random errors ($16)."
+    p_takeaway.font.size = Pt(10.5)
+    p_takeaway.font.bold = True
+    p_takeaway.font.color.rgb = BLUE_DARK
 
     # =========================================================================
-    # SLIDE 3: WANG ET AL. FOUNDATION
+    # SLIDE 3: SELF-CONSISTENCY FOUNDATION
     # =========================================================================
     s3 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s3, OFF_WHITE)
-    add_header(s3, "Theoretical Foundation", "Self-Consistency in LLMs (Wang et al., ICLR 2023)", 3)
+    set_slide_background(s3, BG_PAGE)
+    add_slide_header(s3, "Theoretical Background", "The Existing Foundation: Self-Consistency (Wang et al., ICLR 2023)", 3)
 
-    # Left: Marginalization Formulation
-    c1 = add_card_shape(s3, Inches(0.8), Inches(1.50), Inches(5.7), Inches(5.10))
+    # Left: The Method & Clear Formulation
+    c1 = create_card(s3, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
     tf = c1.text_frame
     p = tf.paragraphs[0]
-    p.text = "Mathematical Formulation of Marginalization"
-    p.font.size = Pt(14)
+    p.text = "How Majority Voting Works in Self-Consistency"
+    p.font.size = Pt(13.5)
     p.font.bold = True
     p.font.color.rgb = BLUE_DARK
     p.space_after = Pt(8)
 
     p_desc = tf.add_paragraph()
-    p_desc.text = "Sample m candidate paths (r_i, a_i) ~ P_LM(r, a | prompt, x) via temperature sampling, then marginalize over rationales via majority vote:"
+    p_desc.text = "Instead of asking the LLM only once, Wang et al. sample multiple distinct reasoning attempts and take a majority vote over the final answers."
     p_desc.font.size = Pt(11)
-    p_desc.font.color.rgb = TEXT_MUTED
+    p_desc.font.color.rgb = TEXT_BODY
     p_desc.space_after = Pt(10)
 
-    eqs = [
-        "Majority Voting Rule:\n  a* = argmax_{a}  ∑_{i=1}^m  I(a_i = a)",
-        "Sequence Likelihood Weighting:\n  w_i = exp( (1 / K_i) ∑_{k=1}^{K_i} log P(t_k | x, t_{<k}) )\n  a* = argmax_{a}  ∑_{i=1}^m  w_i * I(a_i = a)"
-    ]
-    for eq in eqs:
-        pe = tf.add_paragraph()
-        pe.text = eq
-        pe.font.name = "Courier New"
-        pe.font.size = Pt(11)
-        pe.font.bold = True
-        pe.font.color.rgb = BLUE_PRIMARY
-        pe.space_after = Pt(10)
+    # Clean Formula Callout Box
+    f1 = tf.add_paragraph()
+    f1.text = "1. Majority Voting Rule (Selecting Most Common Answer):"
+    f1.font.size = Pt(11)
+    f1.font.bold = True
+    f1.font.color.rgb = TEXT_HEAD
+    f1_box = tf.add_paragraph()
+    f1_box.text = "   Final Answer = Answer with the highest vote count"
+    f1_box.font.name = "Arial"
+    f1_box.font.size = Pt(11)
+    f1_box.font.bold = True
+    f1_box.font.color.rgb = BLUE_ACCENT
+    f1_box.space_after = Pt(10)
+
+    f2 = tf.add_paragraph()
+    f2.text = "2. Confidence-Weighted Rule (Accounting for Model Certainty):"
+    f2.font.size = Pt(11)
+    f2.font.bold = True
+    f2.font.color.rgb = TEXT_HEAD
+    f2_box = tf.add_paragraph()
+    f2_box.text = "   Path Weight = exp( Average Log-Probability of Generated Tokens )\n   Final Answer = Answer with highest total accumulated weight"
+    f2_box.font.name = "Arial"
+    f2_box.font.size = Pt(10.5)
+    f2_box.font.bold = True
+    f2_box.font.color.rgb = PURPLE_ACCENT
+    f2_box.space_after = Pt(10)
 
     p_note = tf.add_paragraph()
-    p_note.text = "Wang et al. Finding: Unweighted majority voting yields virtually identical accuracy to normalized likelihood weighting because candidate likelihoods are closely bounded."
+    p_note.text = "Core Takeaway: Taking the majority vote acts as an unsupervised verifier. It requires zero extra training or human labeling."
     p_note.font.size = Pt(10.5)
     p_note.font.color.rgb = TEXT_MUTED
 
-    # Right: Baselines Table
-    c2 = add_card_shape(s3, Inches(6.833), Inches(1.50), Inches(5.7), Inches(5.10))
+    # Right: Published Gains Table
+    c2 = create_card(s3, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
-    p.text = "Reported Benchmark Accuracies (Table 2)"
-    p.font.size = Pt(14)
+    p.text = "Empirical Accuracy Gains Reported by Wang et al."
+    p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_MAIN
+    p.font.color.rgb = TEXT_HEAD
     p.space_after = Pt(8)
 
-    # Clean Table Shape inside right container
     rows, cols = 7, 5
-    table_shape = s3.shapes.add_table(rows, cols, Inches(7.0), Inches(2.10), Inches(5.366), Inches(3.60))
+    table_shape = s3.shapes.add_table(rows, cols, Inches(7.0), Inches(2.10), Inches(5.366), Inches(3.40))
     t = table_shape.table
-    t.columns[0].width = Inches(1.366)
-    t.columns[1].width = Inches(1.0)
-    t.columns[2].width = Inches(1.0)
+    t.columns[0].width = Inches(1.466)
+    t.columns[1].width = Inches(0.95)
+    t.columns[2].width = Inches(0.95)
     t.columns[3].width = Inches(1.0)
     t.columns[4].width = Inches(1.0)
 
-    headers3 = ["Model", "Task", "CoT", "Self-Cons.", "Gain"]
+    headers3 = ["Model", "Benchmark", "1 Path", "Self-Cons.", "Gain"]
     for i, h in enumerate(headers3):
         cell = t.cell(0, i)
         cell.text = h
@@ -369,9 +395,9 @@ def create_deck():
         cell.fill.fore_color.rgb = RGBColor(241, 245, 249)
         p = cell.text_frame.paragraphs[0]
         p.font.name = FONT_FAMILY
-        p.font.size = Pt(10)
+        p.font.size = Pt(9.5)
         p.font.bold = True
-        p.font.color.rgb = TEXT_MAIN
+        p.font.color.rgb = TEXT_HEAD
 
     data3 = [
         ("PaLM-540B", "GSM8K", "56.5%", "74.4%", "+17.9%"),
@@ -390,16 +416,15 @@ def create_deck():
             p = cell.text_frame.paragraphs[0]
             p.font.name = FONT_FAMILY
             p.font.size = Pt(9.5)
-            p.font.color.rgb = EMERALD_GREEN if c_idx == 4 else TEXT_MAIN
+            p.font.color.rgb = GREEN_ACCENT if c_idx == 4 else TEXT_HEAD
             if c_idx == 4 or c_idx == 0:
                 p.font.bold = True
 
-    # Note below table
-    p_tbl_note = s3.shapes.add_textbox(Inches(7.0), Inches(5.85), Inches(5.366), Inches(0.6))
+    p_tbl_note = s3.shapes.add_textbox(Inches(7.0), Inches(5.75), Inches(5.366), Inches(0.70))
     tf_tn = p_tbl_note.text_frame
     tf_tn.word_wrap = True
     p = tf_tn.paragraphs[0]
-    p.text = "Key Takeaway: Self-consistency gains scale with model parameter scale, reflecting emergence of reasoning diversity."
+    p.text = "Key Observation: Self-consistency provides major gains (+10% to +18%), but it forces every question to generate a large fixed number of paths."
     p.font.size = Pt(9.5)
     p.font.color.rgb = TEXT_MUTED
 
@@ -407,33 +432,33 @@ def create_deck():
     # SLIDE 4: THE STATIC BUDGET TAX
     # =========================================================================
     s4 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s4, OFF_WHITE)
-    add_header(s4, "Identified Inefficiency", "The Critical Dilemma: The Static Budget Tax & Saturation", 4)
+    set_slide_background(s4, BG_PAGE)
+    add_slide_header(s4, "The Practical Limitation", "Why Fixed Sampling (N=40) Wastes Huge Compute and Time", 4)
 
     pillars = [
-        ("Uniform Allocation Fallacy", RED_ACCENT, [
-            "Rigid Budget: Enforces fixed N in [10, 40] paths across every problem unconditionally.",
-            "Trivial Overkill: Elementary questions (15 - 7 = 8) receive the same 40 paths as complex modular algebra.",
-            "FLOP Waste: Up to 90% of token compute on easy queries is squandered confirming obvious consensus."
+        ("The 'One-Size-Fits-All' Waste", RED_ACCENT, [
+            "Fixed Sample Budget: Standard self-consistency forces 10 to 40 paths on every single problem unconditionally.",
+            "Trivial Overkill: For an elementary problem (e.g. 15 - 7 = 8), the first 2 paths already agree 100%. Generating 38 more paths is completely pointless.",
+            "Wasted Resources: Up to 80-90% of token compute on easy problems is spent confirming an answer that is already obvious."
         ]),
-        ("Plateau Dynamics", AMBER_ACCENT, [
-            "Initial Surge: N = 1 -> 5 delivers the vast majority (+10% to +14%) of the accuracy recovery.",
-            "Rapid Saturation: Gains from N = 10 to 40 are negligible (<1.5%), while compute scales 4x linearly.",
-            "High Latency: 40x inference wall-clock delay and API billing for diminishing marginal returns."
+        ("Diminishing Returns (Plateau)", AMBER_ACCENT, [
+            "Quick Initial Gains: Most accuracy gains occur within the first 3 to 5 paths.",
+            "Flat Accuracy Curve: As shown in Wang et al. Figure 2, scaling from 10 to 40 paths yields less than 1.5% accuracy gain.",
+            "Extreme Cost: Generating 40 paths costs 40x the API tokens, takes 40x longer, and easily exceeds free-tier rate limits."
         ]),
-        ("Tail Rationale Dilution", RED_ACCENT, [
-            "Noise Accumulation: Deep tail sampling at non-zero temperature accumulates hallucinated reasoning rationales.",
-            "Empirical Drop: Accuracy peaked at 63.3% at N=4, but fell back to 60.0% at N=6 in our GSM8K experiments.",
-            "Spurious Consensus: Erroneous tail paths can align on plausible distractor numbers, corrupting majority vote."
+        ("Noise in the Tail (Dilution)", RED_ACCENT, [
+            "Accumulation of Hallucinations: When sampling dozens of times at temperature 0.7, rare errors and flawed logic begin to accumulate.",
+            "Empirical Evidence: In our own GSM8K benchmark, accuracy reached 63.3% at 4 paths, but fell back to 60.0% at 6 paths due to noisy tails.",
+            "Spurious Agreement: Bad paths can sometimes randomly agree on the same wrong number, confusing the majority vote."
         ])
     ]
     for i, (p_title, p_color, p_bullets) in enumerate(pillars):
         x = Inches(0.8 + i * 4.0)
-        card = add_card_shape(s4, x, Inches(1.50), Inches(3.733), Inches(5.10))
+        card = create_card(s4, x, Inches(1.48), Inches(3.733), Inches(5.12))
         tf = card.text_frame
         p = tf.paragraphs[0]
         p.text = p_title
-        p.font.size = Pt(13.5)
+        p.font.size = Pt(13)
         p.font.bold = True
         p.font.color.rgb = p_color
         p.space_after = Pt(10)
@@ -441,304 +466,313 @@ def create_deck():
         for b in p_bullets:
             pb = tf.add_paragraph()
             pb.text = "• " + b
-            pb.font.size = Pt(11)
-            pb.font.color.rgb = TEXT_MUTED
+            pb.font.size = Pt(10.5)
+            pb.font.color.rgb = TEXT_BODY
             pb.space_after = Pt(8)
 
     # =========================================================================
-    # SLIDE 5: RESEARCH OBJECTIVES & PROBLEM FORMULATION
+    # SLIDE 5: OUR RESEARCH OBJECTIVES
     # =========================================================================
     s5 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s5, OFF_WHITE)
-    add_header(s5, "Project Scope", "Research Objectives & Problem Formulation", 5)
+    set_slide_background(s5, BG_PAGE)
+    add_slide_header(s5, "Project Objectives", "Our Goal: Stopping Early Once Consensus Is Reached", 5)
 
-    # Top Hypothesis Card (Top: 1.50", Height: 1.05", Bottom: 2.55")
-    stmt_card = add_card_shape(s5, Inches(0.8), Inches(1.50), Inches(11.733), Inches(1.05), fill_color=BLUE_TINT, border_color=BLUE_PRIMARY)
+    # Top Goal Card
+    stmt_card = create_card(s5, Inches(0.8), Inches(1.48), Inches(11.733), Inches(1.05), fill_color=CARD_BG, border_color=CARD_BORDER_BLUE)
     tf = stmt_card.text_frame
     p1 = tf.paragraphs[0]
-    p1.text = "CORE RESEARCH HYPOTHESIS"
+    p1.text = "CORE RESEARCH QUESTION"
     p1.font.size = Pt(10)
     p1.font.bold = True
-    p1.font.color.rgb = BLUE_DARK
+    p1.font.color.rgb = BLUE_ACCENT
     p1.space_after = Pt(2)
     p2 = tf.add_paragraph()
-    p2.text = "\"Can an autoregressive LLM dynamically sense when unequivocal consensus is reached, terminating reasoning generation early to reduce token compute by >40% without inducing accuracy regret?\""
+    p2.text = "\"Can an LLM recognize when it has reached a clear consensus, allowing it to stop generating early and cut compute by >40% without losing any reasoning accuracy?\""
     p2.font.size = Pt(12.5)
     p2.font.bold = True
-    p2.font.color.rgb = TEXT_MAIN
+    p2.font.color.rgb = TEXT_HEAD
 
-    # 3 Stat Cards (Top: 2.70", Height: 2.10", Bottom: 4.80")
+    # 3 Objective Cards
     stat_targets = [
-        ("48.4%", "COMPUTE REDUCTION", "Drastically slash completion tokens and inference FLOPs per question without degrading benchmark accuracy."),
-        ("0.0%", "TARGET REGRET RATE", "Ensure that whenever full-budget SC (N=6) succeeds, our adaptive early-stopping policy never makes a premature error."),
-        ("Dual-Gate", "CONFIDENCE AWARENESS", "Combine discrete count margins with continuous token sequence log-probability perplexities.")
+        (">40% Compute Reduction", "EFFICIENCY TARGET", "Halve the completion tokens and generation time per question compared to standard fixed-budget self-consistency."),
+        ("0.0% Accuracy Regret", "SAFETY TARGET", "Guarantee that stopping early never causes a question to be answered incorrectly if full sampling would have answered it right."),
+        ("Confidence-Aware Gate", "DECISION CRITERIA", "Combine discrete vote lead with the model's own token certainty so the system stops only when genuinely confident.")
     ]
     for i, (num, lbl, desc) in enumerate(stat_targets):
         x = Inches(0.8 + i * 4.0)
-        card = add_card_shape(s5, x, Inches(2.70), Inches(3.733), Inches(2.10))
+        card = create_card(s5, x, Inches(2.68), Inches(3.733), Inches(2.10))
         tf = card.text_frame
         p_num = tf.paragraphs[0]
         p_num.text = num
-        p_num.font.size = Pt(26)
+        p_num.font.size = Pt(15)
         p_num.font.bold = True
-        p_num.font.color.rgb = BLUE_PRIMARY
+        p_num.font.color.rgb = BLUE_DARK
         p_lbl = tf.add_paragraph()
         p_lbl.text = lbl
-        p_lbl.font.size = Pt(10.5)
+        p_lbl.font.size = Pt(10)
         p_lbl.font.bold = True
-        p_lbl.font.color.rgb = TEXT_MAIN
+        p_lbl.font.color.rgb = TEXT_HEAD
         p_lbl.space_after = Pt(4)
         p_desc = tf.add_paragraph()
         p_desc.text = desc
         p_desc.font.size = Pt(10.5)
-        p_desc.font.color.rgb = TEXT_MUTED
+        p_desc.font.color.rgb = TEXT_BODY
 
-    # Bottom Scope Card (Top: 4.95", Height: 1.65", Bottom: 6.60")
-    bot_card = add_card_shape(s5, Inches(0.8), Inches(4.95), Inches(11.733), Inches(1.65))
+    # Bottom Practical Benefits Card
+    bot_card = create_card(s5, Inches(0.8), Inches(4.93), Inches(11.733), Inches(1.67))
     tf = bot_card.text_frame
     p = tf.paragraphs[0]
-    p.text = "Key Project Deliverables"
-    p.font.size = Pt(12.5)
+    p.text = "Why This Matters in Practice:"
+    p.font.size = Pt(12)
     p.font.bold = True
-    p.font.color.rgb = TEXT_MAIN
+    p.font.color.rgb = TEXT_HEAD
     p.space_after = Pt(4)
 
     deliverables = [
-        "1. Dynamic Early-Exit Engine (ca_asc_evaluator.py) operating on sequential micro-batches (b=2).",
-        "2. Robust 6-Stage Extraction Cascade (extractor.py) eliminating formatting dropouts (LaTeX, Markdown, Verbal).",
-        "3. High-Throughput Replay Harness (ablation_study.py) enabling zero-cost local parameter sweeping."
+        "Faster User Experience: Easy questions return answers in 1-2 seconds instead of making the user wait 15 seconds.",
+        "API Cost Savings: Token usage directly determines cloud API costs; cutting tokens by ~48% directly cuts the bill in half.",
+        "Rate Limit Protection: Generating fewer paths prevents exhausting requests-per-minute (RPM) and tokens-per-minute (TPM) quotas."
     ]
     for d in deliverables:
         pd = tf.add_paragraph()
         pd.text = "• " + d
-        pd.font.size = Pt(11)
-        pd.font.color.rgb = TEXT_MUTED
+        pd.font.size = Pt(10.5)
+        pd.font.color.rgb = TEXT_BODY
         pd.space_after = Pt(2)
 
     # =========================================================================
-    # SLIDE 6: PROPOSED METHODOLOGY (CA-ASC)
+    # SLIDE 6: PROPOSED METHODOLOGY
     # =========================================================================
     s6 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s6, OFF_WHITE)
-    add_header(s6, "Methodology", "Confidence-Aware Adaptive Self-Consistency (CA-ASC)", 6)
+    set_slide_background(s6, BG_PAGE)
+    add_slide_header(s6, "Methodology", "How Our System Works: Confidence-Aware Adaptive Self-Consistency", 6)
 
-    # Left: Pipeline Flow
-    c1 = add_card_shape(s6, Inches(0.8), Inches(1.50), Inches(5.7), Inches(5.10))
+    # Left: Step-by-Step Flow
+    c1 = create_card(s6, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
     tf = c1.text_frame
     p = tf.paragraphs[0]
-    p.text = "Sequential Micro-Batch Pipeline (b = 2)"
-    p.font.size = Pt(14)
+    p.text = "The 5-Step Adaptive Evaluation Loop"
+    p.font.size = Pt(13.5)
     p.font.bold = True
     p.font.color.rgb = BLUE_DARK
     p.space_after = Pt(8)
 
     steps = [
-        ("Step 1: Micro-Batch Sampling", "Query model at T=0.7 for b=2 paths concurrently with log-probability capture."),
-        ("Step 2: Robust Normalization", "Pass raw generated rationales through extractor.py to get clean numeric predictions."),
-        ("Step 3: Weight Calculation", "Compute length-normalized sequence weights w_i = exp( (1 / |r_i|) * ∑ log P )."),
-        ("Step 4: Dual-Gate Evaluation", "Verify if discrete count margin AND confidence share thresholds are met."),
-        ("Step 5: Dynamic Exit", "If satisfied -> Terminate early. If tied/split -> Fetch next batch until ceiling N_max=6.")
+        ("Step 1: Small Batch Sampling", "Query the model for just 2 paths (batch size = 2) instead of all 6 paths at once."),
+        ("Step 2: Answer Extraction", "Extract the numeric answer from each path using our robust pattern-matching parser."),
+        ("Step 3: Weight Calculation", "Calculate the model's confidence weight for each path using its token probabilities."),
+        ("Step 4: Check Stopping Conditions", "Are the two paths in agreement? Does the leading answer account for >= 70% of confidence?"),
+        ("Step 5: Output or Continue", "If YES -> Return the consensus answer immediately!\nIf NO (tie or split) -> Generate 2 more paths until consensus is achieved (max 6).")
     ]
     for s_title, s_desc in steps:
         p = tf.add_paragraph()
         p.text = s_title
         p.font.size = Pt(11)
         p.font.bold = True
-        p.font.color.rgb = TEXT_MAIN
+        p.font.color.rgb = TEXT_HEAD
         r = tf.add_paragraph()
         r.text = s_desc
-        r.font.size = Pt(10.5)
-        r.font.color.rgb = TEXT_MUTED
+        r.font.size = Pt(10)
+        r.font.color.rgb = TEXT_BODY
         r.space_after = Pt(4)
 
-    # Right: Dual Stopping Criteria
-    c2 = add_card_shape(s6, Inches(6.833), Inches(1.50), Inches(5.7), Inches(5.10))
+    # Right: The Dual Stopping Criteria
+    c2 = create_card(s6, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
-    p.text = "Dual-Gate Stopping Criteria"
-    p.font.size = Pt(14)
+    p.text = "The Dual Stopping Criteria (Both Must Be True)"
+    p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_MAIN
+    p.font.color.rgb = TEXT_HEAD
     p.space_after = Pt(10)
 
     # Gate 1 Box
     p_g1 = tf2.add_paragraph()
-    p_g1.text = "GATE 1: Discrete Margin Rule (Δ_t >= θ)"
-    p_g1.font.size = Pt(12)
+    p_g1.text = "CONDITION 1: Lead Margin of At Least 2 Votes"
+    p_g1.font.size = Pt(11.5)
     p_g1.font.bold = True
-    p_g1.font.color.rgb = BLUE_PRIMARY
+    p_g1.font.color.rgb = BLUE_ACCENT
     p_g1_d = tf2.add_paragraph()
-    p_g1_d.text = "Δ_t = c_(1) - c_(2) >= 2\nThe lead candidate must outpace the runner-up by at least 2 independent paths. Guarantees 2-0 or 3-1 consensus before exit."
+    p_g1_d.text = "Margin = (Votes for Top Answer) - (Votes for Runner-Up) >= 2\n• If first 2 paths agree (2 vs 0) -> Lead is 2. (Passes!)\n• If first 2 paths disagree (1 vs 1) -> Lead is 0. (Fails, generate more paths)."
     p_g1_d.font.size = Pt(10.5)
-    p_g1_d.font.color.rgb = TEXT_MUTED
+    p_g1_d.font.color.rgb = TEXT_BODY
     p_g1_d.space_after = Pt(10)
 
     # Gate 2 Box
     p_g2 = tf2.add_paragraph()
-    p_g2.text = "GATE 2: Confidence-Share Rule (S_conf >= τ)"
-    p_g2.font.size = Pt(12)
+    p_g2.text = "CONDITION 2: High Model Confidence Share (>= 70%)"
+    p_g2.font.size = Pt(11.5)
     p_g2.font.bold = True
-    p_g2.font.color.rgb = EMERALD_GREEN
+    p_g2.font.color.rgb = GREEN_ACCENT
     p_g2_d = tf2.add_paragraph()
-    p_g2_d.text = "( ∑_{i in lead} w_i ) / ( ∑_{j=1}^t w_j ) >= 0.70\nThe lead answer must account for at least 70% of total accumulated probability mass. Filters out low-confidence coincidences."
+    p_g2_d.text = "Confidence Share = (Weight of Lead Answer) / (Total Weight of All Paths) >= 70%\n• Ensures the model wasn't just 'hesitant' or guessing.\n• Even if 2 paths agree, if token probabilities are unusually low, the system continues sampling to double-check."
     p_g2_d.font.size = Pt(10.5)
-    p_g2_d.font.color.rgb = TEXT_MUTED
-    p_g2_d.space_after = Pt(12)
+    p_g2_d.font.color.rgb = TEXT_BODY
+    p_g2_d.space_after = Pt(10)
 
     p_safety = tf2.add_paragraph()
-    p_safety.text = "Safety Guarantee: If responses split 1 vs 1, margin is Δ=0; CA-ASC automatically continues generation, adapting dynamically to problem difficulty."
-    p_safety.font.size = Pt(11)
+    p_safety.text = "Outcome: Trivial problems stop after 2 paths. Ambiguous problems get the full 6 paths. Nothing is wasted."
+    p_safety.font.size = Pt(10.5)
     p_safety.font.bold = True
-    p_safety.font.color.rgb = PURPLE_ACCENT
+    p_safety.font.color.rgb = BLUE_DARK
 
     # =========================================================================
-    # SLIDE 7: MATHEMATICAL FORMULATION
+    # SLIDE 7: MATHEMATICAL FORMULATION (Humanized, Readable)
     # =========================================================================
     s7 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s7, OFF_WHITE)
-    add_header(s7, "Formal Theory", "Mathematical Formulation & Stopping Criteria Guarantees", 7)
+    set_slide_background(s7, BG_PAGE)
+    add_slide_header(s7, "Mathematical Formulation", "Clear Mathematical Rules Behind the Stopping Policy", 7)
 
-    # Left: Policy Equations
-    c1 = add_card_shape(s7, Inches(0.8), Inches(1.50), Inches(5.7), Inches(5.10))
+    # Left: The Rules
+    c1 = create_card(s7, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
     tf = c1.text_frame
     p = tf.paragraphs[0]
-    p.text = "Unified Stopping Policy Ω(t)"
-    p.font.size = Pt(14)
+    p.text = "The Mathematical Definitions"
+    p.font.size = Pt(13.5)
     p.font.bold = True
     p.font.color.rgb = BLUE_DARK
     p.space_after = Pt(8)
 
     formulas7 = [
-        "1. Candidate Counts & Margin:\n   c_t(a) = ∑_{i=1}^t I(a_i = a)\n   Δ_t = c_(1) - c_(2)",
-        "2. Sequence Likelihood Weighting:\n   w_i = exp( (1 / |r_i|) * ∑_{k=1}^{|r_i|} log P(t_k | x, t_{<k}) )",
-        "3. Unified Stopping Decision Ω(t) in {0, 1}:\n   Ω(t) = [ Δ_t >= θ  AND  (∑_{i: a_i=a*} w_i) / (∑_{j=1}^t w_j) >= τ ]\n          OR  [ t >= N_max ]",
-        "4. Optimal Final Prediction:\n   a* = argmax_{a}  ∑_{i: a_i = a} w_i"
-    ]
-    for form in formulas7:
-        p = tf.add_paragraph()
-        p.text = form
-        p.font.name = "Courier New"
-        p.font.size = Pt(10.5)
-        p.font.bold = True
-        p.font.color.rgb = BLUE_PRIMARY
-        p.space_after = Pt(6)
+        ("1. Vote Counts & Agreement Margin:",
+         "Count for answer a = Number of generated paths that arrived at answer a\nMargin  Δ = Count(Lead Answer) - Count(Runner-Up Answer)"),
 
-    # Right: Error Bound
-    c2 = add_card_shape(s7, Inches(6.833), Inches(1.50), Inches(5.7), Inches(5.10))
+        ("2. Sequence Confidence Weight:",
+         "Weight w = exp( Average Log-Probability of all tokens in the path )\n(Normalized by length so longer proofs are not penalized)"),
+
+        ("3. Stopping Decision Rule:",
+         "STOP if: [ Margin Δ >= 2  AND  Confidence Share >= 70% ]\nOR if max budget of 6 paths is reached."),
+
+        ("4. Final Answer Selection:",
+         "Chosen Answer = Candidate with the highest total confidence weight")
+    ]
+    for title, desc in formulas7:
+        p = tf.add_paragraph()
+        p.text = title
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = TEXT_HEAD
+        r = tf.add_paragraph()
+        r.text = desc
+        r.font.size = Pt(10)
+        r.font.color.rgb = BLUE_DARK
+        r.space_after = Pt(6)
+
+    # Right: Why This Rule Works
+    c2 = create_card(s7, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
-    p.text = "Theoretical Bound on Error Probability"
-    p.font.size = Pt(14)
+    p.text = "Why This Prevents Mistakes: Theoretical Guarantee"
+    p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_MAIN
+    p.font.color.rgb = TEXT_HEAD
     p.space_after = Pt(8)
 
     p_bound = tf2.add_paragraph()
-    p_bound.text = "Multinomial Error Probability Bound:\n  P(Early Exit Error | Δ_t >= θ) <= exp( - Δ_t^2 / 2t ) * (1 - S_conf(t))"
-    p_bound.font.name = "Courier New"
-    p_bound.font.size = Pt(11)
+    p_bound.text = "Theoretical Risk Bound:\nProbability of Early Stop Error <= exp( - Margin^2 / (2 * Paths) ) * (1 - Confidence)"
+    p_bound.font.size = Pt(10.5)
     p_bound.font.bold = True
     p_bound.font.color.rgb = RED_ACCENT
     p_bound.space_after = Pt(10)
 
     bullets7_right = [
-        ("Exponential Risk Decay: ", "As margin Δ_t reaches 2, the probability that the true answer is hidden in the minority decays exponentially."),
-        ("Double Safeguard: ", "Even if Δ_t = 2, if confidence share S_conf is below 0.70 (indicating high perplexity), early termination is withheld."),
-        ("O(1) Decision Overhead: ", "Evaluating stopping requires O(|A| log |A|) ≈ O(1) operations since |A| <= 6. Latency overhead is < 0.05ms.")
+        ("Exponential Safety: ", "As the margin between first and second place grows to 2 votes, the statistical chance of the true answer being hidden in the minority drops exponentially."),
+        ("Double Filter Against Guessing: ", "Even if two paths arrive at the same number by coincidence, if the model's confidence share is below 70%, the system refuses to stop early."),
+        ("Instant Decision Time: ", "Evaluating these two rules takes less than 0.05 milliseconds on a CPU — adding virtually zero overhead to the model's generation.")
     ]
     for b_title, b_desc in bullets7_right:
         p = tf2.add_paragraph()
         p.text = "• " + b_title
-        p.font.size = Pt(11)
+        p.font.size = Pt(10.5)
         p.font.bold = True
-        p.font.color.rgb = TEXT_MAIN
+        p.font.color.rgb = TEXT_HEAD
         r = p.add_run()
         r.text = b_desc
         r.font.bold = False
-        r.font.color.rgb = TEXT_MUTED
+        r.font.color.rgb = TEXT_BODY
         p.space_after = Pt(6)
 
     # =========================================================================
     # SLIDE 8: SYSTEM ARCHITECTURE & ENGINEERING
     # =========================================================================
     s8 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s8, OFF_WHITE)
-    add_header(s8, "Engineering Pipeline", "System Architecture & Modular Implementation", 8)
+    set_slide_background(s8, BG_PAGE)
+    add_slide_header(s8, "Implementation Architecture", "What We Built: Core Codebase Modules", 8)
 
     modules8 = [
-        ("client_wrapper.py", "Asynchronous API Client", BLUE_PRIMARY, [
-            "ThreadPoolExecutor with max_workers=2 to prevent rate quota saturation.",
-            "Token Bucket Backoff: Handles HTTP 429 rate limit with dynamic 15s pause.",
-            "Extracts avg_logprob and completion token counts per generated reasoning path."
+        ("client_wrapper.py", "Asynchronous LLM Client", BLUE_ACCENT, [
+            "Manages API connections with ThreadPoolExecutor (2 workers) to respect free-tier token limits.",
+            "Automatic Rate-Limit Backoff: If an HTTP 429 response is received, it pauses for 15 seconds to let the token bucket refill.",
+            "Captures both the text rationale and token log-probabilities to compute path weights."
         ]),
-        ("extractor.py", "Robust Extraction Cascade", PURPLE_ACCENT, [
-            "6-stage regex & AST normalizer catching LaTeX, Markdown, and verbal text.",
-            "Cleans currency ($/₹/€), thousand commas, percentage marks, and trailing periods.",
-            "Achieved 100% extraction recovery across all 180 benchmark paths."
+        ("extractor.py", "Robust Answer Parser", PURPLE_ACCENT, [
+            "6-stage regex parser that handles messy LLM formatting (LaTeX, Markdown, units).",
+            "Cleans currencies ($/₹/€), commas (1,250 -> 1250), percentages, and trailing punctuation.",
+            "Passes 11/11 unit tests and achieves 100% extraction recovery on all test problems."
         ]),
-        ("ca_asc_evaluator.py", "High-Throughput Replay", EMERALD_GREEN, [
-            "Permanent caching of all N=6 paths and tokens in full_paper_benchmark.jsonl.",
-            "Local replay simulator sweeps θ in {1,2,3}, batch sizes, and τ in milliseconds.",
-            "Eliminates redundant API costs during policy development and hyperparameter tuning."
+        ("ca_asc_evaluator.py", "Adaptive Replay Simulator", GREEN_ACCENT, [
+            "Implements the dual-condition early stopping engine (margin + confidence share).",
+            "High-Throughput Offline Replay: Re-runs policy sweeps over cached traces in 0.05 seconds.",
+            "Allows testing different thresholds without spending API credits or making repetitive calls."
         ])
     ]
     for i, (mod_file, mod_name, mod_col, mod_bullets) in enumerate(modules8):
         x = Inches(0.8 + i * 4.0)
-        card = add_card_shape(s8, x, Inches(1.50), Inches(3.733), Inches(5.10))
+        card = create_card(s8, x, Inches(1.48), Inches(3.733), Inches(5.12))
         tf = card.text_frame
         p = tf.paragraphs[0]
         p.text = mod_file
-        p.font.size = Pt(13.5)
+        p.font.size = Pt(13)
         p.font.bold = True
         p.font.color.rgb = mod_col
         p.space_after = Pt(2)
 
         p_sub = tf.add_paragraph()
         p_sub.text = mod_name
-        p_sub.font.size = Pt(11)
+        p_sub.font.size = Pt(10.5)
         p_sub.font.bold = True
-        p_sub.font.color.rgb = TEXT_MAIN
+        p_sub.font.color.rgb = TEXT_HEAD
         p_sub.space_after = Pt(10)
 
         for b in mod_bullets:
             pb = tf.add_paragraph()
             pb.text = "• " + b
-            pb.font.size = Pt(11)
-            pb.font.color.rgb = TEXT_MUTED
+            pb.font.size = Pt(10.5)
+            pb.font.color.rgb = TEXT_BODY
             pb.space_after = Pt(8)
 
     # =========================================================================
     # SLIDE 9: EXPERIMENTAL SETUP
     # =========================================================================
     s9 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s9, OFF_WHITE)
-    add_header(s9, "Experimental Protocol", "Experimental Setup & Benchmark Configuration", 9)
+    set_slide_background(s9, BG_PAGE)
+    add_slide_header(s9, "Experimental Setup", "Benchmark Dataset, Model Backbone & Comparison Baselines", 9)
 
     # Left: Parameter Table
-    c1 = add_card_shape(s9, Inches(0.8), Inches(1.50), Inches(5.7), Inches(5.10))
+    c1 = create_card(s9, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
     tf = c1.text_frame
     p = tf.paragraphs[0]
-    p.text = "Benchmark Specification"
-    p.font.size = Pt(14)
+    p.text = "Experimental Configuration"
+    p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_MAIN
+    p.font.color.rgb = TEXT_HEAD
     p.space_after = Pt(6)
 
     rows, cols = 8, 2
     table_shape = s9.shapes.add_table(rows, cols, Inches(1.0), Inches(2.05), Inches(5.3), Inches(4.30))
     t = table_shape.table
-    t.columns[0].width = Inches(2.3)
-    t.columns[1].width = Inches(3.0)
+    t.columns[0].width = Inches(2.2)
+    t.columns[1].width = Inches(3.1)
 
     params9 = [
         ("Benchmark Dataset", "OpenAI GSM8K (Grade School Math 8K) Test"),
-        ("Model Backbone", "openai/gpt-oss-20b (Open-weights reasoning)"),
+        ("Model Backbone", "openai/gpt-oss-20b (20B reasoning model)"),
         ("Inference Engine", "Groq LPU Hardware Acceleration"),
-        ("Sampling Temperature", "T = 0.70 (Balanced reasoning diversity)"),
+        ("Sampling Temperature", "T = 0.70 (Encourages diverse reasoning paths)"),
         ("Nucleus Top-P", "p = 0.95"),
-        ("Max Completion Tokens", "256 tokens per path"),
-        ("Micro-Batch Size (b)", "b = 2 (Sequential batch evaluation)"),
-        ("Stopping Thresholds", "Margin θ = 2, Confidence τ = 0.70, N_max = 6")
+        ("Max Tokens / Path", "256 tokens per path (Keeps outputs concise)"),
+        ("Batch Size (b)", "b = 2 (Sequential micro-batches)"),
+        ("Stopping Parameters", "Margin lead = 2, Confidence = 70%, Max budget = 6")
     ]
     for r_idx, (p_name, p_val) in enumerate(params9):
         c0 = t.cell(r_idx, 0)
@@ -747,121 +781,120 @@ def create_deck():
         c0.margin_left = c0.margin_right = Inches(0.06)
         c0.text_frame.paragraphs[0].font.bold = True
         c0.text_frame.paragraphs[0].font.size = Pt(9.5)
-        c0.text_frame.paragraphs[0].font.color.rgb = TEXT_MAIN
+        c0.text_frame.paragraphs[0].font.color.rgb = TEXT_HEAD
         c1_cell = t.cell(r_idx, 1)
         c1_cell.text = p_val
         c1_cell.margin_top = c1_cell.margin_bottom = Inches(0.04)
         c1_cell.margin_left = c1_cell.margin_right = Inches(0.06)
         c1_cell.text_frame.paragraphs[0].font.size = Pt(9.5)
-        c1_cell.text_frame.paragraphs[0].font.color.rgb = BLUE_DARK if r_idx >= 6 else TEXT_MUTED
+        c1_cell.text_frame.paragraphs[0].font.color.rgb = BLUE_DARK if r_idx >= 6 else TEXT_BODY
 
     # Right: Baselines
-    c2 = add_card_shape(s9, Inches(6.833), Inches(1.50), Inches(5.7), Inches(5.10))
+    c2 = create_card(s9, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
-    p.text = "Comparative Baseline Strategies"
-    p.font.size = Pt(14)
+    p.text = "Strategies Evaluated for Comparison"
+    p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_MAIN
+    p.font.color.rgb = TEXT_HEAD
     p.space_after = Pt(8)
 
     baselines9 = [
-        ("Baseline 1: Greedy CoT (N=1)", "Standard greedy decoding at T=0. Lowest compute consumption but highly vulnerable to single-step reasoning errors."),
-        ("Baseline 2: Wang et al. Standard SC (N=1..6)", "Full fixed sampling budget evaluated with unweighted majority vote. Serves as primary scaling reference."),
-        ("Baseline 3: Confidence-Weighted SC (N=6)", "Full fixed sampling budget evaluated with sequence likelihood weighting w_i = exp(avg_logprob)."),
-        ("Proposed: Adaptive SC (CA-ASC)", "Dynamic early stopping on micro-batches (b=2) using hybrid discrete margin θ=2 and confidence share τ=0.70.")
+        ("1. Single-Path Greedy (N=1): ", "The standard approach: ask the model once with zero temperature. Fast, but has no self-correction mechanism."),
+        ("2. Fixed Self-Consistency (N=1 to 6): ", "The Wang et al. baseline: sample a fixed budget of paths for every question, regardless of whether it was easy or hard."),
+        ("3. Confidence-Weighted SC (Fixed N=6): ", "Same fixed budget of 6 paths, but each vote is weighted by model log-probability."),
+        ("4. Adaptive Self-Consistency (Ours): ", "Samples paths in pairs of 2. Stops as soon as the lead answer has a 2-vote margin and >= 70% confidence.")
     ]
     for b_title, b_desc in baselines9:
         p = tf2.add_paragraph()
         p.text = b_title
         p.font.size = Pt(11)
         p.font.bold = True
-        p.font.color.rgb = BLUE_PRIMARY if "Proposed" in b_title else TEXT_MAIN
-        r = tf2.add_paragraph()
+        p.font.color.rgb = BLUE_ACCENT if "Adaptive" in b_title else TEXT_HEAD
+        r = p.add_run()
         r.text = b_desc
-        r.font.size = Pt(10.5)
-        r.font.color.rgb = TEXT_MUTED
-        r.space_after = Pt(6)
+        r.font.bold = False
+        r.font.color.rgb = TEXT_BODY
+        p.space_after = Pt(6)
 
     # =========================================================================
-    # SLIDE 10: ROBUST EXTRACTION & ERROR MITIGATION
+    # SLIDE 10: ANSWER EXTRACTION & ERROR MITIGATION
     # =========================================================================
     s10 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s10, OFF_WHITE)
-    add_header(s10, "Robust Extraction", "Robust Answer Extraction & Error Mitigation", 10)
+    set_slide_background(s10, BG_PAGE)
+    add_slide_header(s10, "Robust Parsing", "Answer Extraction: Handling Inconsistent LLM Outputs", 10)
 
-    # Left: Resolved Failures
-    c1 = add_card_shape(s10, Inches(0.8), Inches(1.50), Inches(5.7), Inches(5.10))
+    # Left: Real Formatting Difficulties
+    c1 = create_card(s10, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
     tf = c1.text_frame
     p = tf.paragraphs[0]
-    p.text = "Failure Cases Resolved in extractor.py"
-    p.font.size = Pt(14)
+    p.text = "Real-World Output Variations from LLMs"
+    p.font.size = Pt(13.5)
     p.font.bold = True
     p.font.color.rgb = RED_ACCENT
     p.space_after = Pt(8)
 
     cases10 = [
-        ("LaTeX Boxed Formatting: ", "\\boxed{1,250.00} -> Stripped LaTeX wrapper and thousand comma -> 1250"),
-        ("Markdown Bold Embeds: ", "The cost is **$104** in total -> Stripped markdown asterisks and currency -> 104"),
-        ("Written Concluding Phrases: ", "Total: 104 dollars / The cost is 104 dollars -> Captured phrase ending -> 104"),
-        ("Trailing Period Artifacts: ", "The answer is 18. -> Stripped punctuation while preserving floating point -4.5 -> 18"),
-        ("Last Numeral Paragraph Fallback: ", "Multi-sentence reasoning concluding at paragraph end -> 18")
+        ("LaTeX Boxed Notation: ", "Model writes \\boxed{1,250.00} instead of just 1250. Parser strips brackets and removes commas."),
+        ("Markdown Bold Embeddings: ", "Model outputs 'The cost is **$104** in total'. Parser extracts 104 and ignores the dollar sign and asterisks."),
+        ("Verbal Concluding Sentences: ", "Model concludes with 'Total: 104 dollars'. Parser identifies concluding phrases and extracts the number."),
+        ("Trailing Period Noise: ", "Model outputs 'The answer is 18.' Parser removes the period while preserving negative numbers like -4.5."),
+        ("Last Numeral Fallback: ", "If the model doesn't use standard tags, the parser safely pulls the final computed number from the end of the rationale.")
     ]
     for c_title, c_desc in cases10:
         p = tf.add_paragraph()
         p.text = "• " + c_title
         p.font.size = Pt(11)
         p.font.bold = True
-        p.font.color.rgb = TEXT_MAIN
+        p.font.color.rgb = TEXT_HEAD
         r = p.add_run()
         r.text = c_desc
         r.font.bold = False
-        r.font.color.rgb = TEXT_MUTED
+        r.font.color.rgb = TEXT_BODY
         p.space_after = Pt(6)
 
-    # Right: 6-Stage Cascade
-    c2 = add_card_shape(s10, Inches(6.833), Inches(1.50), Inches(5.7), Inches(5.10))
+    # Right: The 6-Stage Priority Cascade
+    c2 = create_card(s10, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
-    p.text = "The 6-Stage Priority Extraction Cascade"
-    p.font.size = Pt(14)
+    p.text = "The 6-Stage Priority Cascade in extractor.py"
+    p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = EMERALD_GREEN
+    p.font.color.rgb = GREEN_ACCENT
     p.space_after = Pt(8)
 
     stages10 = [
-        "Stage 1: GSM8K Tag Format  (#### <num>)",
-        "Stage 2: LaTeX Boxed Pattern  (\\boxed{<num>})",
-        "Stage 3: Verbal Expressions  (the answer is <num>)",
-        "Stage 4: Markdown Bold Regex  (**<num>** / **$<num>**)",
-        "Stage 5: Concluding Stmt Regex  (total is <num> dollars)",
-        "Stage 6: Fallback Numerical Scan  (all_numbers[-1])"
+        "Priority 1: GSM8K Tag Format  (#### <num>)",
+        "Priority 2: LaTeX Box Pattern  (\\boxed{<num>})",
+        "Priority 3: Verbal Phrases  (the answer is <num>)",
+        "Priority 4: Markdown Bold  (**<num>** or **$<num>**)",
+        "Priority 5: Concluding Stmts  (total is <num> dollars)",
+        "Priority 6: Final Numeral Fallback  (last valid number)"
     ]
     for s in stages10:
         p = tf2.add_paragraph()
         p.text = s
-        p.font.name = "Courier New"
         p.font.size = Pt(10.5)
         p.font.bold = True
         p.font.color.rgb = BLUE_DARK
         p.space_after = Pt(5)
 
     p_perf = tf2.add_paragraph()
-    p_perf.text = "\nUnit Test Verification: 11 / 11 unit test suites passed successfully.\nExtraction Recovery: 100% extraction recovery across all 180 paths in GSM8K benchmark trace, eliminating false negative drops."
-    p_perf.font.size = Pt(11)
+    p_perf.text = "\nVerification Result:\n• 11 / 11 automated unit test suites pass.\n• Achieves 100% extraction recovery across all 180 paths in the benchmark, eliminating false scoring penalties."
+    p_perf.font.size = Pt(10.5)
     p_perf.font.bold = True
-    p_perf.font.color.rgb = EMERALD_GREEN
+    p_perf.font.color.rgb = GREEN_ACCENT
 
     # =========================================================================
-    # SLIDE 11: WANG REPLICATION VS ADAPTIVE SC (Figure 1 Embedded)
+    # SLIDE 11: REPLICATION & ADAPTIVE SC (Figure 1 Embedded)
     # =========================================================================
     s11 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s11, OFF_WHITE)
-    add_header(s11, "Empirical Results", "Wang et al. Replication vs. Adaptive SC Scaling Curve", 11)
+    set_slide_background(s11, BG_PAGE)
+    add_slide_header(s11, "Empirical Results", "Replication of Wang et al. vs. Our Adaptive Self-Consistency", 11)
 
-    # Left: Embed Real Project Figure 1 (Top: 1.50", Height: 5.10", Bottom: 6.60")
+    # Left: Embed Real Project Figure 1
     fig1_path = "results/fig1_wang_vs_adaptive_scaling.png"
-    add_card_shape(s11, Inches(0.8), Inches(1.50), Inches(7.1), Inches(5.10))
+    add_card_shape = create_card(s11, Inches(0.8), Inches(1.48), Inches(7.1), Inches(5.12))
     if os.path.exists(fig1_path):
         s11.shapes.add_picture(fig1_path, Inches(0.95), Inches(1.65), Inches(6.8), Inches(4.30))
         cap_box = s11.shapes.add_textbox(Inches(0.95), Inches(6.05), Inches(6.8), Inches(0.40))
@@ -871,158 +904,159 @@ def create_deck():
         p.font.color.rgb = TEXT_MUTED
         p.alignment = PP_ALIGN.CENTER
 
-    # Right: Analytical Side-Panel (Top: 1.50", Height: 5.10", Bottom: 6.60")
-    c11 = add_card_shape(s11, Inches(8.1), Inches(1.50), Inches(4.433), Inches(5.10))
+    # Right: Analytical Side-Panel
+    c11 = create_card(s11, Inches(8.1), Inches(1.48), Inches(4.433), Inches(5.12))
     tf = c11.text_frame
     p = tf.paragraphs[0]
-    p.text = "Empirical Scaling Dynamics"
-    p.font.size = Pt(14)
+    p.text = "What This Graph Proves"
+    p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_MAIN
+    p.font.color.rgb = TEXT_HEAD
     p.space_after = Pt(8)
 
     insights11 = [
-        ("N=1 (Greedy CoT): ", "50.0% accuracy baseline."),
-        ("N=3 Jump: ", "Jumps to 60.0% as majority consensus filters out early arithmetic mistakes."),
-        ("N=4, 5 Peak: ", "Reaches 63.3% peak accuracy (+13.3% absolute gain over greedy)."),
-        ("N=6 Tail Dilution: ", "Drops back to 60.0% due to tail rationale noise accumulating at T=0.7."),
-        ("Adaptive SC (Ours): ", "Achieves the exact target 60.0% accuracy at an average of only k = 3.1 paths per question!"),
-        ("Optimal Stopping: ", "Exits before tail rationale dilution can poison the consensus mode.")
+        ("Single Path (N=1): ", "50.0% accuracy with standard greedy decoding."),
+        ("Accuracy Climb (N=3): ", "Jumps to 60.0% as majority consensus filters out early calculation slips."),
+        ("Peak Accuracy (N=4, 5): ", "Reaches 63.3% accuracy (+13.3% absolute gain)."),
+        ("Tail Noise at N=6: ", "Drops back to 60.0% as noisy rationales at T=0.7 pollute the vote."),
+        ("Adaptive SC (Ours): ", "Reaches the exact 60.0% target accuracy using an average of only 3.1 paths per question!"),
+        ("Why It Wins: ", "Stops early when confident, avoiding both unnecessary compute and tail rationale noise.")
     ]
     for i_title, i_desc in insights11:
         p = tf.add_paragraph()
         p.text = "• " + i_title
-        p.font.size = Pt(11)
+        p.font.size = Pt(10.5)
         p.font.bold = True
-        p.font.color.rgb = BLUE_PRIMARY if "Adaptive" in i_title else TEXT_MAIN
+        p.font.color.rgb = BLUE_ACCENT if "Adaptive" in i_title else TEXT_HEAD
         r = p.add_run()
         r.text = i_desc
         r.font.bold = False
-        r.font.color.rgb = TEXT_MUTED
+        r.font.color.rgb = TEXT_BODY
         p.space_after = Pt(5)
 
     # =========================================================================
-    # SLIDE 12: INFERENCE COMPUTE PARETO FRONTIER (Figure 2 Embedded)
+    # SLIDE 12: PARETO FRONTIER & 48.4% COMPUTE REDUCTION (Figure 2 Embedded)
     # =========================================================================
     s12 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s12, OFF_WHITE)
-    add_header(s12, "Compute Efficiency", "Inference Compute Pareto Frontier: 48.4% Token Reduction", 12)
+    set_slide_background(s12, BG_PAGE)
+    add_slide_header(s12, "Compute Efficiency", "Compute Efficiency: 48.4% Token Reduction on the Pareto Frontier", 12)
 
     # Left: Embed Real Project Figure 2
     fig2_path = "results/fig2_pareto_compute.png"
-    add_card_shape(s12, Inches(0.8), Inches(1.50), Inches(7.1), Inches(5.10))
+    create_card(s12, Inches(0.8), Inches(1.48), Inches(7.1), Inches(5.12))
     if os.path.exists(fig2_path):
         s12.shapes.add_picture(fig2_path, Inches(0.95), Inches(1.65), Inches(6.8), Inches(4.30))
         cap_box = s12.shapes.add_textbox(Inches(0.95), Inches(6.05), Inches(6.8), Inches(0.40))
         p = cap_box.text_frame.paragraphs[0]
-        p.text = "Figure 2: Empirical Pareto frontier on GSM8K comparing Average Completion Tokens vs. Accuracy (%)."
+        p.text = "Figure 2: Empirical Pareto frontier on GSM8K: Completion Tokens vs. Benchmark Accuracy (%)."
         p.font.size = Pt(9.5)
         p.font.color.rgb = TEXT_MUTED
         p.alignment = PP_ALIGN.CENTER
 
     # Right: Analytical Side-Panel
-    c12 = add_card_shape(s12, Inches(8.1), Inches(1.50), Inches(4.433), Inches(5.10))
+    c12 = create_card(s12, Inches(8.1), Inches(1.48), Inches(4.433), Inches(5.12))
     tf = c12.text_frame
     p = tf.paragraphs[0]
-    p.text = "Pareto Dominance Summary"
-    p.font.size = Pt(14)
+    p.text = "Token Savings Breakdown"
+    p.font.size = Pt(13.5)
     p.font.bold = True
     p.font.color.rgb = BLUE_DARK
     p.space_after = Pt(6)
 
     p_box = tf.add_paragraph()
-    p_box.text = "-48.4% TOKENS"
-    p_box.font.size = Pt(22)
+    p_box.text = "-48.4% TOKENS SAVED"
+    p_box.font.size = Pt(20)
     p_box.font.bold = True
-    p_box.font.color.rgb = BLUE_PRIMARY
+    p_box.font.color.rgb = GREEN_ACCENT
     p_box.space_after = Pt(6)
 
     comp_items12 = [
-        ("Standard SC (N=6): ", "1,123 avg completion tokens / problem."),
-        ("Adaptive SC (Ours): ", "601 avg completion tokens / problem."),
-        ("Token Compute Saved: ", "522 tokens saved per question (-48.4%)."),
-        ("Strict Pareto Dominance: ", "Adaptive SC establishes a new optimal Pareto frontier strictly to the left of the fixed-budget curve at identical 60.0% accuracy."),
-        ("Latency & Cost: ", "Nearly halves wall-clock generation latency and inference API expenditure.")
+        ("Standard SC (N=6): ", "Consumes 1,123 tokens per question on average."),
+        ("Adaptive SC (Ours): ", "Consumes 601 tokens per question on average."),
+        ("Net Reduction: ", "522 completion tokens saved per problem (-48.4%)."),
+        ("Same Accuracy: ", "Both achieve identical 60.0% accuracy on the GSM8K benchmark."),
+        ("Strict Pareto Dominance: ", "Our method lies strictly to the left of the fixed curve, providing equal intelligence at nearly half the compute."),
+        ("Real Latency Benefit: ", "Halves waiting time for user answers during interactive sessions.")
     ]
     for c_title, c_desc in comp_items12:
         p = tf.add_paragraph()
         p.text = "• " + c_title
-        p.font.size = Pt(11)
+        p.font.size = Pt(10.5)
         p.font.bold = True
-        p.font.color.rgb = TEXT_MAIN
+        p.font.color.rgb = TEXT_HEAD
         r = p.add_run()
         r.text = c_desc
         r.font.bold = False
-        r.font.color.rgb = TEXT_MUTED
+        r.font.color.rgb = TEXT_BODY
         p.space_after = Pt(5)
 
     # =========================================================================
-    # SLIDE 13: DYNAMIC SAMPLE ALLOCATION (Figure 3 Embedded)
+    # SLIDE 13: SAMPLE ALLOCATION HISTOGRAM (Figure 3 Embedded)
     # =========================================================================
     s13 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s13, OFF_WHITE)
-    add_header(s13, "Empirical Distribution", "Dynamic Sample Allocation Across Difficulty Tiers", 13)
+    set_slide_background(s13, BG_PAGE)
+    add_slide_header(s13, "Dynamic Allocation", "Sample Allocation: How the System Adapts to Problem Difficulty", 13)
 
     # Left: Embed Real Project Figure 3
     fig3_path = "results/figure_2_sample_allocation.png"
-    add_card_shape(s13, Inches(0.8), Inches(1.50), Inches(7.1), Inches(5.10))
+    create_card(s13, Inches(0.8), Inches(1.48), Inches(7.1), Inches(5.12))
     if os.path.exists(fig3_path):
         s13.shapes.add_picture(fig3_path, Inches(0.95), Inches(1.65), Inches(6.8), Inches(4.30))
         cap_box = s13.shapes.add_textbox(Inches(0.95), Inches(6.05), Inches(6.8), Inches(0.40))
         p = cap_box.text_frame.paragraphs[0]
-        p.text = "Figure 3: Distribution of reasoning paths evaluated before termination across 30 GSM8K problems."
+        p.text = "Figure 3: Number of reasoning paths evaluated before termination across 30 GSM8K test questions."
         p.font.size = Pt(9.5)
         p.font.color.rgb = TEXT_MUTED
         p.alignment = PP_ALIGN.CENTER
 
     # Right: Analytical Side-Panel
-    c13 = add_card_shape(s13, Inches(8.1), Inches(1.50), Inches(4.433), Inches(5.10))
+    c13 = create_card(s13, Inches(8.1), Inches(1.48), Inches(4.433), Inches(5.12))
     tf = c13.text_frame
     p = tf.paragraphs[0]
-    p.text = "Tiered Allocation Breakdown"
-    p.font.size = Pt(14)
+    p.text = "Difficulty Tier Breakdown"
+    p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_MAIN
+    p.font.color.rgb = TEXT_HEAD
     p.space_after = Pt(6)
 
     tiers13 = [
-        ("Easy Tier (k = 2): ", "20 Questions (66.7%)", EMERALD_GREEN, "Consensus reached instantly on first micro-batch (Δ=2). Early exit saves 66.7% of maximum compute."),
-        ("Medium Tier (k = 4): ", "4 Questions (13.3%)", AMBER_ACCENT, "Batch 1 produced split predictions (1 vs 1, Δ=0). Batch 2 broke the tie to reach Δ=2 consensus."),
-        ("Complex Tier (k = 6): ", "6 Questions (20.0%)", RED_ACCENT, "Intrinsically ambiguous or multi-step questions requiring full exploration budget N_max=6.")
+        ("Easy Tier (k = 2 paths): ", "20 Questions (66.7%)", GREEN_ACCENT, "Two-thirds of all questions reach clear agreement on the first pair. Stopping here saves 66.7% of maximum compute."),
+        ("Medium Tier (k = 4 paths): ", "4 Questions (13.3%)", AMBER_ACCENT, "First batch split 1-vs-1. The second batch broke the tie and established consensus."),
+        ("Complex Tier (k = 6 paths): ", "6 Questions (20.0%)", RED_ACCENT, "Challenging multi-constraint problems that genuinely required full exploration budget.")
     ]
     for t_name, t_stat, t_col, t_desc in tiers13:
         p = tf.add_paragraph()
         p.text = t_name + t_stat
-        p.font.size = Pt(11)
+        p.font.size = Pt(10.5)
         p.font.bold = True
         p.font.color.rgb = t_col
         r = tf.add_paragraph()
         r.text = t_desc
-        r.font.size = Pt(10.5)
-        r.font.color.rgb = TEXT_MUTED
+        r.font.size = Pt(10)
+        r.font.color.rgb = TEXT_BODY
         r.space_after = Pt(6)
 
     p_avg = tf.add_paragraph()
-    p_avg.text = "Overall Mean Budget: k_bar = 3.07 ≈ 3.1 paths"
-    p_avg.font.size = Pt(11.5)
+    p_avg.text = "Overall Average Budget Used: 3.1 paths per question\n(Compared to 6.0 paths required by standard Self-Consistency)"
+    p_avg.font.size = Pt(11)
     p_avg.font.bold = True
     p_avg.font.color.rgb = BLUE_DARK
 
     # =========================================================================
-    # SLIDE 14: ABLATION STUDIES
+    # SLIDE 14: ABLATION STUDIES (Validating Stopping Rules)
     # =========================================================================
     s14 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s14, OFF_WHITE)
-    add_header(s14, "Ablation Studies", "Hyperparameter Sensitivity & Policy Ablation Analysis", 14)
+    set_slide_background(s14, BG_PAGE)
+    add_slide_header(s14, "Ablation Analysis", "Ablation Study: Validating the Stopping Thresholds", 14)
 
     # Left: Grid Sweep Table
-    c1 = add_card_shape(s14, Inches(0.8), Inches(1.50), Inches(5.7), Inches(5.10))
+    c1 = create_card(s14, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
     tf = c1.text_frame
     p = tf.paragraphs[0]
-    p.text = "Offline Policy Sweep (ablation_study.py)"
-    p.font.size = Pt(14)
+    p.text = "Offline Parameter Sweep (ablation_study.py)"
+    p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_MAIN
+    p.font.color.rgb = TEXT_HEAD
     p.space_after = Pt(6)
 
     rows, cols = 6, 6
@@ -1035,7 +1069,7 @@ def create_deck():
     t.columns[4].width = Inches(1.0)
     t.columns[5].width = Inches(1.0)
 
-    abl_headers = ["Batch", "θ", "τ", "Acc", "Savings", "Regret"]
+    abl_headers = ["Batch", "Lead Margin", "Confidence", "Acc.", "Savings", "Regret Rate"]
     for i, h in enumerate(abl_headers):
         cell = t.cell(0, i)
         cell.text = h
@@ -1047,14 +1081,14 @@ def create_deck():
         p.font.name = FONT_FAMILY
         p.font.size = Pt(9.5)
         p.font.bold = True
-        p.font.color.rgb = TEXT_MAIN
+        p.font.color.rgb = TEXT_HEAD
 
     abl_data = [
-        ("b=1", "θ=1", "0.70", "56.7%", "+56.1%", "10.0%"),
-        ("b=1", "θ=2", "0.70", "70.0%", "+23.5%", "0.0%"),
-        ("b=2", "θ=1", "0.70", "66.7%", "+33.0%", "0.0%"),
-        ("b=2", "θ=2", "0.70", "70.0%", "+23.0%", "0.0%"),
-        ("b=2", "θ=3", "0.70", "70.0%", "+5.2%",  "0.0%")
+        ("b=1", "Margin=1", "70%", "56.7%", "+56.1%", "10.0%"),
+        ("b=1", "Margin=2", "70%", "70.0%", "+23.5%", "0.0%"),
+        ("b=2", "Margin=1", "70%", "66.7%", "+33.0%", "0.0%"),
+        ("b=2", "Margin=2", "70%", "70.0%", "+23.0%", "0.0%"),
+        ("b=2", "Margin=3", "70%", "70.0%", "+5.2%",  "0.0%")
     ]
     for r_idx, row_data in enumerate(abl_data):
         for c_idx, val in enumerate(row_data):
@@ -1065,7 +1099,7 @@ def create_deck():
             p = cell.text_frame.paragraphs[0]
             p.font.name = FONT_FAMILY
             p.font.size = Pt(9.5)
-            if r_idx == 3:
+            if r_idx == 3:  # Our optimal setting
                 cell.fill.solid()
                 cell.fill.fore_color.rgb = BLUE_TINT
                 p.font.bold = True
@@ -1074,113 +1108,113 @@ def create_deck():
                 p.font.bold = True
                 p.font.color.rgb = RED_ACCENT
             else:
-                p.font.color.rgb = TEXT_MAIN
+                p.font.color.rgb = TEXT_HEAD
 
-    # Right: Sensitivity Insights
-    c2 = add_card_shape(s14, Inches(6.833), Inches(1.50), Inches(5.7), Inches(5.10))
+    # Right: Trade-Off Insights
+    c2 = create_card(s14, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
-    p.text = "Hyperparameter Trade-Off Insights"
-    p.font.size = Pt(14)
+    p.text = "What This Teaches Us About Stopping Policies"
+    p.font.size = Pt(13.5)
     p.font.bold = True
     p.font.color.rgb = BLUE_DARK
     p.space_after = Pt(8)
 
     insights14 = [
-        ("θ = 1 (Overly Aggressive): ", "Exits on a margin of 1. Yields high compute savings (+56%), but suffers a 10.0% regret rate due to premature consensus on early noisy tokens."),
-        ("θ = 2, τ = 0.70 (Optimal Sweet Spot): ", "Reaches 70.0% accuracy with 0.0% regret! Never makes a premature mistake on questions solvable by full SC."),
-        ("θ = 3 (Overly Conservative): ", "Delays stopping until k ≈ 5.5, forfeiting compute savings for negligible accuracy gain."),
-        ("Confidence Threshold (τ = 0.70): ", "Acts as an essential perplexity filter: even when Δ=2, if token perplexity is high, early exit is safely withheld.")
+        ("Margin = 1 (Too Aggressive): ", "Stopping on a 1-vote lead saves high compute (+56%), but suffers a 10.0% regret rate because it prematurely trusts lucky early guesses."),
+        ("Margin = 2, Confidence >= 70% (Optimal): ", "The sweet spot! Achieves 70.0% accuracy with 0.0% regret. Never makes a premature mistake on problems the full budget could solve."),
+        ("Margin = 3 (Too Conservative): ", "Delays stopping until 5.5 paths, wasting compute without gaining any extra accuracy."),
+        ("Role of Confidence Check (>= 70%): ", "Acts as an essential safety net: even if 2 paths agree, if token perplexity is high, early exit is delayed until confirmation.")
     ]
     for i_title, i_desc in insights14:
         p = tf2.add_paragraph()
         p.text = "• " + i_title
-        p.font.size = Pt(11)
+        p.font.size = Pt(10.5)
         p.font.bold = True
-        p.font.color.rgb = TEXT_MAIN
+        p.font.color.rgb = TEXT_HEAD
         r = p.add_run()
         r.text = i_desc
         r.font.bold = False
-        r.font.color.rgb = TEXT_MUTED
+        r.font.color.rgb = TEXT_BODY
         p.space_after = Pt(6)
 
     # =========================================================================
-    # SLIDE 15: MILESTONES & FUTURE ROADMAP
+    # SLIDE 15: MILESTONES & FINAL-TERM ROADMAP
     # =========================================================================
     s15 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s15, OFF_WHITE)
-    add_header(s15, "Project Roadmap", "Mid-Term Milestones Completed & Final-Term Roadmap", 15)
+    set_slide_background(s15, BG_PAGE)
+    add_slide_header(s15, "Project Roadmap", "Mid-Term Milestones Completed & Final-Term Roadmap", 15)
 
     # Left: Completed Mid-Term
-    c1 = add_card_shape(s15, Inches(0.8), Inches(1.50), Inches(5.7), Inches(5.10))
+    c1 = create_card(s15, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
     tf = c1.text_frame
     p = tf.paragraphs[0]
-    p.text = "✓ Mid-Term Milestones Achieved (100% On-Schedule)"
-    p.font.size = Pt(13.5)
+    p.text = "✓ Completed Mid-Term Deliverables (100% On-Schedule)"
+    p.font.size = Pt(13)
     p.font.bold = True
-    p.font.color.rgb = EMERALD_GREEN
+    p.font.color.rgb = GREEN_ACCENT
     p.space_after = Pt(8)
 
     done_items = [
-        ("Theoretical Replication: ", "Replicated Wang et al. (ICLR 2023) scaling curves and quantified plateau dynamics."),
-        ("Asynchronous Infrastructure: ", "Built robust Groq API harness with concurrency throttling and rate-limit backoff."),
-        ("Multi-Tier Parser: ", "Built 6-stage extraction cascade achieving 100% extraction recovery on GSM8K."),
-        ("Empirical Demonstration: ", "Proved 48.4% token compute reduction with 0.0% accuracy regret on GSM8K benchmark."),
-        ("Zero-Cost Replay Engine: ", "Implemented offline simulator for rapid hyperparameter sweep without API cost.")
+        ("Replication of Wang et al.: ", "Replicated empirical scaling curves and confirmed saturation dynamics on GSM8K."),
+        ("Asynchronous API Harness: ", "Built production-grade client with rate-limiting, exponential backoff, and logprob capture."),
+        ("Robust 6-Stage Parser: ", "Built extractor.py achieving 100% extraction recovery across all test paths."),
+        ("Proof of 48.4% Compute Reduction: ", "Demonstrated 48.4% token compute reduction with 0.0% accuracy regret."),
+        ("High-Speed Replay Engine: ", "Enabled local simulation sweeps across stopping thresholds in under 0.05 seconds.")
     ]
     for d_title, d_desc in done_items:
         p = tf.add_paragraph()
         p.text = "• " + d_title
-        p.font.size = Pt(11)
+        p.font.size = Pt(10.5)
         p.font.bold = True
-        p.font.color.rgb = TEXT_MAIN
+        p.font.color.rgb = TEXT_HEAD
         r = p.add_run()
         r.text = d_desc
         r.font.bold = False
-        r.font.color.rgb = TEXT_MUTED
+        r.font.color.rgb = TEXT_BODY
         p.space_after = Pt(6)
 
     # Right: Future Work Roadmap
-    c2 = add_card_shape(s15, Inches(6.833), Inches(1.50), Inches(5.7), Inches(5.10))
+    c2 = create_card(s15, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
-    p.text = "➔ Final-Term Research Roadmap (Nov 2026 - May 2027)"
-    p.font.size = Pt(13.5)
+    p.text = "➔ Final-Term Roadmap (Nov 2026 - May 2027)"
+    p.font.size = Pt(13)
     p.font.bold = True
-    p.font.color.rgb = BLUE_PRIMARY
+    p.font.color.rgb = BLUE_ACCENT
     p.space_after = Pt(8)
 
     future_items = [
-        ("Benchmark Expansion: ", "Scale validation to SVAMP, MATH, and AQuA-RAT datasets across diverse reasoning domains."),
-        ("Token-Level Early Stopping: ", "Halt individual path generation mid-trajectory if cumulative sequence entropy exceeds threshold."),
-        ("Multi-Model Cascade Routing: ", "Route easy queries (k=2) to an 8B model, reserving 70B models strictly for unresolved complex queries (k=6)."),
-        ("Conference Paper Submission: ", "Target submission to an ACL / EMNLP / NeurIPS peer-reviewed workshop.")
+        ("Benchmark Expansion: ", "Evaluate on SVAMP, MATH, and AQuA-RAT to prove generalization across different reasoning types."),
+        ("Token-Level Early Stopping: ", "Halt bad reasoning paths mid-generation if cumulative token entropy exceeds certainty bounds."),
+        ("Model Cascade Routing: ", "Route easy problems (k=2) to a fast 8B model, reserving 70B models strictly for unresolved hard problems."),
+        ("Conference Submission: ", "Prepare and submit a complete research paper to an ACL / EMNLP / NeurIPS peer-reviewed workshop.")
     ]
     for f_title, f_desc in future_items:
         p = tf2.add_paragraph()
         p.text = "• " + f_title
-        p.font.size = Pt(11)
+        p.font.size = Pt(10.5)
         p.font.bold = True
-        p.font.color.rgb = TEXT_MAIN
+        p.font.color.rgb = TEXT_HEAD
         r = p.add_run()
         r.text = f_desc
         r.font.bold = False
-        r.font.color.rgb = TEXT_MUTED
+        r.font.color.rgb = TEXT_BODY
         p.space_after = Pt(6)
 
     # =========================================================================
-    # SLIDE 16: CONCLUSION & Q&A (Dark Theme)
+    # SLIDE 16: CONCLUSION & FACULTY Q&A (Cohesive Light Theme)
     # =========================================================================
     s16 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s16, NAVY_DARK)
+    set_slide_background(s16, BG_PAGE)
 
     # Top Tag
-    pill = add_card_shape(s16, Inches(0.8), Inches(0.60), Inches(3.6), Inches(0.35), fill_color=NAVY_CARD, border_color=EMERALD_GREEN)
+    pill = create_card(s16, Inches(0.8), Inches(0.60), Inches(3.6), Inches(0.35), fill_color=CARD_BG, border_color=CARD_BORDER_BLUE)
     p = pill.text_frame.paragraphs[0]
     p.text = "MID-TERM EVALUATION SUMMARY"
     p.font.size = Pt(9.5)
     p.font.bold = True
-    p.font.color.rgb = EMERALD_GREEN
+    p.font.color.rgb = BLUE_ACCENT
     p.alignment = PP_ALIGN.CENTER
 
     # Main Title
@@ -1189,16 +1223,16 @@ def create_deck():
     tf.word_wrap = True
     p1 = tf.paragraphs[0]
     p1.text = "Key Takeaways & Conclusion"
-    p1.font.size = Pt(30)
+    p1.font.size = Pt(28)
     p1.font.bold = True
-    p1.font.color.rgb = WHITE
+    p1.font.color.rgb = TEXT_HEAD
     p1.space_after = Pt(4)
     p2 = tf.add_paragraph()
     p2.text = "Confidence-Aware Adaptive Self-Consistency transforms reasoning inference from brute-force sampling into dynamic, consensus-guided intelligence."
     p2.font.size = Pt(14)
-    p2.font.color.rgb = TEXT_LIGHT
+    p2.font.color.rgb = BLUE_DARK
 
-    # 3 Stat Cards (Top: 2.35", Height: 2.10", Bottom: 4.45")
+    # 3 Summary Cards
     stat_summary16 = [
         ("-48.4%", "COMPUTE REDUCTION", "Consumes 601 tokens vs 1,128 tokens for identical 60.0% GSM8K accuracy."),
         ("66.7%", "INSTANT RESOLUTION", "Two-thirds of all questions terminate on Batch 1 (k=2), eliminating redundant sampling."),
@@ -1206,75 +1240,75 @@ def create_deck():
     ]
     for i, (num, lbl, desc) in enumerate(stat_summary16):
         x = Inches(0.8 + i * 4.0)
-        card = add_card_shape(s16, x, Inches(2.35), Inches(3.733), Inches(2.10), fill_color=NAVY_CARD, border_color=RGBColor(51, 65, 85))
+        card = create_card(s16, x, Inches(2.35), Inches(3.733), Inches(2.10), fill_color=CARD_BG, border_color=CARD_BORDER)
         tf = card.text_frame
         p_num = tf.paragraphs[0]
         p_num.text = num
         p_num.font.size = Pt(26)
         p_num.font.bold = True
-        p_num.font.color.rgb = CYAN_ACCENT
+        p_num.font.color.rgb = BLUE_ACCENT
         p_lbl = tf.add_paragraph()
         p_lbl.text = lbl
         p_lbl.font.size = Pt(10.5)
         p_lbl.font.bold = True
-        p_lbl.font.color.rgb = WHITE
+        p_lbl.font.color.rgb = TEXT_HEAD
         p_lbl.space_after = Pt(4)
         p_desc = tf.add_paragraph()
         p_desc.text = desc
         p_desc.font.size = Pt(10.5)
-        p_desc.font.color.rgb = TEXT_LIGHT
+        p_desc.font.color.rgb = TEXT_BODY
 
-    # Supervisor & Team Acknowledgment Card (Top: 4.65", Height: 1.95", Bottom: 6.60")
-    ack_card = add_card_shape(s16, Inches(0.8), Inches(4.65), Inches(11.733), Inches(1.95), fill_color=NAVY_CARD, border_color=RGBColor(51, 65, 85))
+    # Supervisor & Team Acknowledgment Card
+    ack_card = create_card(s16, Inches(0.8), Inches(4.65), Inches(11.733), Inches(1.95), fill_color=CARD_BG, border_color=CARD_BORDER)
     tf = ack_card.text_frame
     
-    # Internal text layout
     p = tf.paragraphs[0]
-    p.text = "SUPERVISION & GUIDANCE"
+    p.text = "PROJECT SUPERVISOR"
     p.font.size = Pt(10.5)
     p.font.bold = True
-    p.font.color.rgb = CYAN_ACCENT
+    p.font.color.rgb = BLUE_ACCENT
     p.space_after = Pt(2)
 
     p_sup = tf.add_paragraph()
     p_sup.text = "Dr. Bharat Singh  —  Assistant Professor, Department of CSE, IIIT Ranchi"
     p_sup.font.size = Pt(13)
     p_sup.font.bold = True
-    p_sup.font.color.rgb = WHITE
+    p_sup.font.color.rgb = TEXT_HEAD
     p_sup.space_after = Pt(8)
 
     p_team_hdr = tf.add_paragraph()
-    p_team_hdr.text = "RESEARCH TEAM & CONTACT"
+    p_team_hdr.text = "STUDENT INVESTIGATORS"
     p_team_hdr.font.size = Pt(10.5)
     p_team_hdr.font.bold = True
-    p_team_hdr.font.color.rgb = CYAN_ACCENT
+    p_team_hdr.font.color.rgb = BLUE_ACCENT
     p_team_hdr.space_after = Pt(2)
 
     p_team = tf.add_paragraph()
     p_team.text = "Pankaj Jangid (2023UG3004)  |  Aagman (2023UG3027)  |  Abhinav Kumar (2023UG4018)"
     p_team.font.size = Pt(12)
     p_team.font.bold = True
-    p_team.font.color.rgb = WHITE
+    p_team.font.color.rgb = TEXT_HEAD
     p_team.space_after = Pt(4)
 
     p_thanks = tf.add_paragraph()
-    p_thanks.text = "Department of Computer Science & Engineering, IIIT Ranchi  •  Thank You! Questions & Discussion."
+    p_thanks.text = "Department of Computer Science & Engineering, IIIT Ranchi  •  Thank You! Questions & Faculty Discussion."
     p_thanks.font.size = Pt(11)
-    p_thanks.font.color.rgb = CYAN_ACCENT
+    p_thanks.font.bold = True
+    p_thanks.font.color.rgb = BLUE_DARK
 
     # Footer
     f_box = s16.shapes.add_textbox(Inches(0.8), Inches(6.85), Inches(11.733), Inches(0.35))
     p = f_box.text_frame.paragraphs[0]
     p.text = "Mid-Term Evaluation Date: November 12, 2026  |  IIIT Ranchi CSE Minor Project"
-    p.font.size = Pt(10)
-    p.font.color.rgb = TEXT_LIGHT
+    p.font.size = Pt(9.5)
+    p.font.color.rgb = TEXT_MUTED
 
     # Save presentation
     output_pptx = "presentation.pptx"
     prs.save(output_pptx)
-    print(f"Presentation successfully regenerated and saved to: {output_pptx}")
+    print(f"Faculty defense presentation successfully built and saved to: {output_pptx}")
     return output_pptx
 
 
 if __name__ == "__main__":
-    create_deck()
+    build_faculty_deck()
