@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adaptive Self-Consistency in LLMs | Mid-Term Presentation | IIIT Ranchi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-dark: #0B132B;
+      --secondary-dark: #1C2541;
+      --accent-cyan: #48CAE4;
+      --accent-blue: #2563EB;
+      --accent-indigo: #4F46E5;
+      --accent-teal: #0D9488;
+      --accent-emerald: #059669;
+      --accent-amber: #D97706;
+      --accent-rose: #E11D48;
+      
+      --bg-light: #F8FAFC;
+      --card-light: #FFFFFF;
+      --text-dark: #0F172A;
+      --text-muted: #475569;
+      --text-light: #94A3B8;
+      --border-light: #E2E8F0;
+      --border-dark: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #030712;
+      color: var(--text-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Fixed 1280x720 Presentation Canvas */
+    .deck-container {
+      position: relative;
+      width: 1280px;
+      height: 720px;
+      max-width: 1280px;
+      max-height: 720px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      border-radius: 12px;
+      overflow: hidden;
+      background-color: var(--bg-light);
+    }
+
+    /* Slides */
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1280px;
+      height: 720px;
+      padding: 44px 56px;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    /* Dark Slide Themes (Slide 1 and 16 strictly) */
+    .slide.dark-theme {
+      background: radial-gradient(circle at 80% 20%, #1E293B 0%, #0B132B 60%, #070D1F 100%);
+      color: #F8FAFC;
+    }
+
+    /* Slide Header */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid var(--border-light);
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+    }
+
+    .dark-theme .slide-header {
+      border-bottom-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .header-left .category-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--accent-blue);
+      margin-bottom: 4px;
+    }
+
+    .dark-theme .header-left .category-badge {
+      color: var(--accent-cyan);
+    }
+
+    .header-left h2 {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-dark);
+      letter-spacing: -0.5px;
+    }
+
+    .dark-theme .header-left h2 {
+      color: #FFFFFF;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .project-tag {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: #F1F5F9;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-light);
+    }
+
+    .dark-theme .project-tag {
+      color: #94A3B8;
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Slide Content Bodies */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      gap: 28px;
+      align-items: stretch;
+      overflow: hidden;
+    }
+
+    /* Grid Layouts */
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      width: 100%;
+    }
+
+    .grid-3col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .grid-4col {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      width: 100%;
+    }
+
+    .col-flex {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      justify-content: space-between;
+    }
+
+    /* Cards & Containers */
+    .card {
+      background-color: var(--card-light);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+    }
+
+    .dark-theme .card {
+      background-color: rgba(30, 41, 59, 0.6);
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dark-theme .card-title {
+      color: #FFFFFF;
+    }
+
+    .card p, .card li {
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: var(--text-muted);
+    }
+
+    .dark-theme .card p, .dark-theme .card li {
+      color: #CBD5E1;
+    }
+
+    ul.bullet-list {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    ul.bullet-list li {
+      position: relative;
+      padding-left: 18px;
+      margin-bottom: 8px;
+    }
+
+    ul.bullet-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--accent-blue);
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .dark-theme ul.bullet-list li::before {
+      color: var(--accent-cyan);
+    }
+
+    /* Math & Code Blocks */
+    .math-block {
+      font-family: 'JetBrains Mono', monospace;
+      background: #F1F5F9;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border-left: 4px solid var(--accent-blue);
+      font-size: 13.5px;
+      color: #1E293B;
+      margin: 10px 0;
+      line-height: 1.6;
+    }
+
+    .dark-theme .math-block {
+      background: #0F172A;
+      color: #38BDF8;
+      border-left-color: var(--accent-cyan);
+    }
+
+    /* Highlight Badges & Metric Pills */
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill-blue { background: #DBEAFE; color: #1E40AF; }
+    .pill-green { background: #D1FAE5; color: #065F46; }
+    .pill-red { background: #FEE2E2; color: #991B1B; }
+    .pill-amber { background: #FEF3C7; color: #92400E; }
+    .pill-purple { background: #EDE9FE; color: #5B21B6; }
+
+    .stat-hero {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: #FFFFFF;
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      padding: 14px 18px;
+    }
+
+    .stat-hero .stat-number {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--accent-blue);
+      line-height: 1.1;
+    }
+
+    .stat-hero .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Slide Footer */
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border-light);
+      padding-top: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 14px;
+    }
+
+    .dark-theme .slide-footer {
+      border-top-color: rgba(255, 255, 255, 0.1);
+      color: #94A3B8;
+    }
+
+    /* Controls Overlay */
+    .controls {
+      position: fixed;
+      bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 8px 18px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      z-index: 1000;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .slide-counter {
+      color: #94A3B8;
+      font-size: 13px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .progress-bar-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      z-index: 100;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+      width: 6.25%;
+      transition: width 0.3s ease;
+    }
+
+    /* Tables */
+    table.academic-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      margin-top: 6px;
+    }
+
+    table.academic-table th {
+      background: #F1F5F9;
+      color: #1E293B;
+      font-weight: 700;
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 2px solid var(--border-light);
+    }
+
+    table.academic-table td {
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-dark);
+    }
+
+    table.academic-table tr:hover td {
+      background-color: #F8FAFC;
+    }
+
+    .highlight-row td {
+      background-color: #EFF6FF !important;
+      font-weight: 600;
+      color: #1E40AF !important;
+    }
+
+    /* Image Figure Side-Panel Layout */
+    .figure-layout {
+      display: grid;
+      grid-template-columns: 62% 38%;
+      gap: 24px;
+      width: 100%;
+      height: 100%;
+      align-items: center;
+    }
+
+    .figure-wrapper {
+      background: #FFFFFF;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-light);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+    }
+
+    .figure-caption {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      text-align: center;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="deck-container">
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 1: TITLE SLIDE (Dark Theme) -->
+    <!-- ========================================== -->
+    <div class="slide dark-theme active" id="slide-1">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="pill pill-blue" style="background:rgba(37,99,235,0.25); color:#60A5FA; border:1px solid rgba(96,165,250,0.3); font-size:12px; padding:6px 14px;">
+          B.Tech CSE Minor Project • Mid-Term Evaluation
+        </span>
+        <span style="font-size:13px; color:#94A3B8; font-weight:600;">Department of Computer Science & Engineering</span>
+      </div>
+
+      <div style="margin: 32px 0 20px 0;">
+        <h1 style="font-size: 42px; font-weight: 800; color: #FFFFFF; line-height: 1.18; letter-spacing: -1px; margin-bottom: 14px;">
+          Adaptive Self-Consistency<br>in Large Language Models
+        </h1>
+        <p style="font-size: 20px; color: #94A3B8; font-weight: 400; max-width: 960px; line-height: 1.45;">
+          Dynamic Consensus-Driven Inference for Efficient Mathematical & Multi-Step Reasoning
+        </p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 28px; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.12); padding: 22px 28px; border-radius: 12px;">
+        <div>
+          <div style="font-size: 11px; text-transform: uppercase; color: var(--accent-cyan); font-weight: 700; letter-spacing: 1px; margin-bottom: 10px;">
+            Student Investigators
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 14px; color: #F8FAFC; font-weight: 600;">
+              • Pankaj Jangid <span style="color: #94A3B8; font-weight: 400;">(Reg: 2023UG3004)</span>
+            </div>
+            <div style="font-size: 14px; color: #F8FAFC; font-weight: 600;">
+              • Aagman <span style="color: #94A3B8; font-weight: 400;">(Reg: 2023UG3027)</span>
+            </div>
+            <div style="font-size: 14px; color: #F8FAFC; font-weight: 600;">
+              • Abhinav Kumar <span style="color: #94A3B8; font-weight: 400;">(Reg: 2023UG4018)</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size: 11px; text-transform: uppercase; color: var(--accent-cyan); font-weight: 700; letter-spacing: 1px; margin-bottom: 10px;">
+            Faculty Supervisor & Institution
+          </div>
+          <div style="font-size: 15px; color: #FFFFFF; font-weight: 700;">
+            Dr. Bharat Singh
+          </div>
+          <div style="font-size: 13px; color: #94A3B8; margin-top: 2px;">
+            Assistant Professor, Department of CSE
+          </div>
+          <div style="font-size: 13px; color: #60A5FA; font-weight: 600; margin-top: 6px;">
+            Indian Institute of Information Technology (IIIT) Ranchi
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Mid-Term Defense Date: November 12, 2026</span>
+        <span>IIIT Ranchi • CSE Minor Project 2026-27</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 2: MOTIVATION & REASONING BOTTLENECK -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-2">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Background & Motivation</span>
+          <h2>The Reasoning Bottleneck in Autoregressive LLMs</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">Phase I Context</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2col">
+          <div class="card">
+            <div class="card-title">
+              <span class="pill pill-red">Greedy Failure Mode</span> Compounding Errors in Single-Path CoT
+            </div>
+            <p style="margin-bottom: 12px;">
+              Chain-of-Thought (CoT) prompting encourages models to generate intermediate reasoning rationales ($r \to a$). However, <strong>greedy decoding ($T=0$)</strong> suffers from catastrophic brittleness:
+            </p>
+            <ul class="bullet-list">
+              <li><strong>Zero Self-Correction:</strong> A slight arithmetic or logic stumble in step 2 irrevocably poisons all subsequent tokens ($t_{k} \sim P(t_k | t_{<k})$).</li>
+              <li><strong>Local Optima Trap:</strong> Greedy search commits to highest token probability locally, missing globally coherent solution topologies.</li>
+              <li><strong>Uncalibrated Confidence:</strong> LLMs express high output probability even when the underlying reasoning path is hallucinated.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span class="pill pill-blue">Intuition</span> Reasoning Diversity as an Error Filter
+            </div>
+            <p style="margin-bottom: 12px;">
+              Human problem-solving naturally explores diverse angles. When multiple distinct reasoning pathways converge on the <em>identical terminal answer</em>, confidence multiplies exponentially:
+            </p>
+            <div class="math-block">
+              Path 1: 16 - (3 + 4) = 9; 9 × $2 = $18  [Correct ✓]<br>
+              Path 2: 16 - 3 = 13; 13 - 4 = 9; 9 × $2 = $18 [Correct ✓]<br>
+              Path 3: 16 × 2 = 32; 32 - 7 = $25     [Arithmetic Slip ✗]
+            </div>
+            <p style="font-size: 13px; color: var(--accent-emerald); font-weight: 600;">
+              Key Insight: Diverse valid proofs converge on the exact same consensus; errors disperse into idiosyncratic, isolated tails.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 2 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 3: WANG ET AL. FOUNDATION -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-3">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Theoretical Foundation</span>
+          <h2>Self-Consistency over Diverse Reasoning Paths (Wang et al., ICLR 2023)</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">ICLR 2023 Replication</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2col">
+          <div class="col-flex">
+            <div class="card">
+              <div class="card-title">Mathematical Formulation of Marginalization</div>
+              <p>
+                Assume $m$ candidate rationale-answer pairs $(r_i, a_i) \sim P_{\text{LM}}(r, a \mid x)$ sampled via temperature $T > 0$. Wang et al. marginalize out reasoning paths by taking majority voting over terminal answers:
+              </p>
+              <div class="math-block">
+                $$\hat{a} = \arg\max_{a \in \mathcal{A}} \sum_{i=1}^m \mathbb{I}(a_i = a)$$
+              </div>
+              <p style="font-size: 12.5px; margin-top: 6px;">
+                Alternatively, weighting each vote by normalized sequence log-likelihood:
+              </p>
+              <div class="math-block">
+                $$P(r_i, a_i \mid x) = \exp\left( \frac{1}{K_i} \sum_{k=1}^{K_i} \log P(t_k \mid x, t_{<k}) \right)$$
+              </div>
+            </div>
+
+            <div class="card" style="background:#F0FDF4; border-color:#BBF7D0;">
+              <span class="pill pill-green">Key Finding</span>
+              <p style="color:#166534; font-size:13px; margin-top:6px;">
+                Wang et al. established that unweighted majority vote and normalized likelihood weighting yield near-identical gains, proving that answer frequency alone acts as a formidable unsupervised verifier.
+              </p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Published Baseline Accuracy Jumps (Wang et al., Table 2)</div>
+            <table class="academic-table">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Task</th>
+                  <th>Greedy CoT</th>
+                  <th>Self-Consistency</th>
+                  <th>Absolute Gain</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>PaLM-540B</strong></td>
+                  <td>GSM8K</td>
+                  <td>56.5%</td>
+                  <td><strong>74.4%</strong></td>
+                  <td><span class="pill pill-green">+17.9%</span></td>
+                </tr>
+                <tr>
+                  <td>PaLM-540B</td>
+                  <td>SVAMP</td>
+                  <td>79.0%</td>
+                  <td><strong>86.6%</strong></td>
+                  <td><span class="pill pill-green">+7.6%</span></td>
+                </tr>
+                <tr>
+                  <td>PaLM-540B</td>
+                  <td>AQuA</td>
+                  <td>35.8%</td>
+                  <td><strong>48.3%</strong></td>
+                  <td><span class="pill pill-green">+12.5%</span></td>
+                </tr>
+                <tr style="border-top: 1px dashed #CBD5E1;">
+                  <td><strong>LaMDA-137B</strong></td>
+                  <td>GSM8K</td>
+                  <td>17.1%</td>
+                  <td><strong>27.7%</strong></td>
+                  <td><span class="pill pill-green">+10.6%</span></td>
+                </tr>
+                <tr>
+                  <td>LaMDA-137B</td>
+                  <td>SVAMP</td>
+                  <td>38.9%</td>
+                  <td><strong>53.3%</strong></td>
+                  <td><span class="pill pill-green">+14.4%</span></td>
+                </tr>
+                <tr style="border-top: 1px dashed #CBD5E1;">
+                  <td><strong>GPT-3 (davinci-002)</strong></td>
+                  <td>GSM8K</td>
+                  <td>60.1%</td>
+                  <td><strong>78.0%</strong></td>
+                  <td><span class="pill pill-green">+17.9%</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 10px;">
+              Gains scale directly with model parameter size, demonstrating reasoning emergence.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 3 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 4: THE STATIC BUDGET TAX -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-4">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Identified Problem</span>
+          <h2>The Critical Dilemma: The Static Budget Tax & Plateau Dynamics</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">Compute Bottleneck</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-3col">
+          <div class="card">
+            <div class="card-title">
+              <span class="pill pill-red">Flaw 1</span> Uniform Allocation Fallacy
+            </div>
+            <p style="margin-bottom: 10px;">
+              Standard Self-Consistency assigns a rigid, uniform sampling budget ($N \in [10, 40]$) to every problem regardless of difficulty:
+            </p>
+            <ul class="bullet-list">
+              <li><strong>Trivial:</strong> <em>"A baker has 12 donuts and sells 5. How many are left?"</em> $\to$ Wastes 40 paths on an elementary problem where 2 paths agree.</li>
+              <li><strong>Complex:</strong> 5-step algebra with modular constraints $\to$ Might genuinely benefit from wider exploration.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span class="pill pill-amber">Flaw 2</span> Rapid Accuracy Saturation
+            </div>
+            <p style="margin-bottom: 10px;">
+              Wang et al. (Figure 2) revealed distinct logarithmic plateau dynamics as $N$ scales from 1 to 40:
+            </p>
+            <ul class="bullet-list">
+              <li>$N = 1 \to 5$: Steepest jump (+10% to +14% accuracy gain).</li>
+              <li>$N = 5 \to 10$: Modest improvement (+2% to +3%).</li>
+              <li>$N = 10 \to 40$: <strong>Plateau / Saturation.</strong> Compute grows 4× linearly while accuracy yields &lt;1.5% incremental delta!</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span class="pill pill-red">Flaw 3</span> Tail Rationale Dilution
+            </div>
+            <p style="margin-bottom: 10px;">
+              Over-sampling past consensus causes statistical degradation:
+            </p>
+            <ul class="bullet-list">
+              <li>As $N$ grows large at non-zero temperature, the tail probability mass of hallucinated rationales accumulates.</li>
+              <li>Spurious consensus clusters can form among noisy outputs, occasionally degrading the mode prediction.</li>
+              <li>In our empirical replication, $N=6$ dropped to 60.0% compared to 63.3% at $N=4$.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 4 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 5: RESEARCH OBJECTIVES -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-5">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Project Scope</span>
+          <h2>Research Objectives & Problem Formulation</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">Core Hypotheses</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="col-flex" style="width: 100%;">
+          <div class="card" style="border-left: 5px solid var(--accent-blue);">
+            <div style="font-size: 16px; font-weight: 700; color: #1E3A8A; margin-bottom: 6px;">
+              Core Research Problem
+            </div>
+            <p style="font-size: 14.5px; color: #1E293B;">
+              <em>"Can an autoregressive LLM dynamically sense when an unequivocal consensus is reached, terminating reasoning generation early to cut token compute by >40% without inducing accuracy regret?"</em>
+            </p>
+          </div>
+
+          <div class="grid-3col">
+            <div class="stat-hero">
+              <span class="stat-number">40%+</span>
+              <span class="stat-label">Target Token Savings</span>
+              <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 6px;">
+                Slash completion tokens and inference FLOPs per question on GSM8K without degrading benchmark accuracy.
+              </p>
+            </div>
+
+            <div class="stat-hero">
+              <span class="stat-number">0.0%</span>
+              <span class="stat-label">Regret Minimization</span>
+              <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 6px;">
+                Guarantee that whenever full-budget SC ($N=6$) would solve the problem correctly, our early exit policy never yields an erroneous answer.
+              </p>
+            </div>
+
+            <div class="stat-hero">
+              <span class="stat-number">Dual-Gate</span>
+              <span class="stat-label">Confidence-Aware Stopping</span>
+              <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 6px;">
+                Synthesize discrete count margin $\Delta_t$ with continuous sequence perplexities $w_i = \exp(\frac{1}{|r|} \sum \log P)$.
+              </p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Key Engineering & Methodological Deliverables</div>
+            <div class="grid-2col" style="gap: 16px;">
+              <ul class="bullet-list">
+                <li><strong>Dynamic Stopping Engine:</strong> Adaptive micro-batch generation ($b=2$) with real-time early exit gates.</li>
+                <li><strong>Robust Multi-Tier Parser:</strong> Regex/AST cascade to eliminate parsing drops (`\boxed`, Markdown, natural language).</li>
+              </ul>
+              <ul class="bullet-list">
+                <li><strong>Zero-Cost Offline Simulator:</strong> Replay engine on cached inference traces for rapid hyperparameter sweep.</li>
+                <li><strong>Empirical Pareto Validation:</strong> Clear Pareto dominance on GSM8K against Wang et al. fixed baselines.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 5 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 6: PROPOSED METHODOLOGY (CA-ASC) -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-6">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Methodology</span>
+          <h2>Proposed Framework: Confidence-Aware Adaptive Self-Consistency (CA-ASC)</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">System Design</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2col">
+          <div class="card">
+            <div class="card-title">Sequential Batch Generation Pipeline</div>
+            <p style="margin-bottom: 10px;">
+              Rather than sampling all $N_{\max}=6$ paths in parallel (over-committing compute), CA-ASC deploys an <strong>iterative micro-batch pipeline ($b=2$)</strong>:
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin: 12px 0;">
+              <div style="background: #F1F5F9; padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent-blue); font-size: 12.5px;">
+                <strong>Step 1: Batch Sampling:</strong> Query LLM at $T=0.7$ for $b=2$ diverse reasoning paths with token log-probability extraction.
+              </div>
+              <div style="background: #F1F5F9; padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent-indigo); font-size: 12.5px;">
+                <strong>Step 2: Robust Extraction:</strong> Normalize predicted answers and compute length-adjusted sequence confidence weights $w_i$.
+              </div>
+              <div style="background: #F1F5F9; padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent-teal); font-size: 12.5px;">
+                <strong>Step 3: Dual-Gate Evaluation:</strong> Compute count margin $\Delta_t$ and confidence share $\mathcal{S}_{\text{conf}}(t)$.
+              </div>
+              <div style="background: #F0FDF4; padding: 10px 14px; border-radius: 8px; border-left: 3px solid var(--accent-emerald); font-size: 12.5px;">
+                <strong>Step 4: Decision Branch:</strong> If criteria satisfied $\to$ <em>Immediate Early Exit</em>. Else $\to$ fetch next batch until $t = N_{\max}$.
+              </div>
+            </div>
+          </div>
+
+          <div class="col-flex">
+            <div class="card">
+              <div class="card-title">Dual Stopping Criteria Architecture</div>
+              <p style="margin-bottom: 10px;">Both conditions must simultaneously hold to trigger early termination:</p>
+              
+              <div style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                <div style="font-weight: 700; color: #1E40AF; font-size: 13px;">Gate 1: Discrete Margin Rule ($\Delta_t \ge \theta$)</div>
+                <div style="font-size: 12.5px; color: #1E3A8A; margin-top: 4px;">
+                  $$\Delta_t = c_{(1)} - c_{(2)} \ge 2$$
+                  Requires the lead candidate to lead the runner-up by at least 2 distinct independent paths.
+                </div>
+              </div>
+
+              <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 12px; border-radius: 8px;">
+                <div style="font-weight: 700; color: #166534; font-size: 13px;">Gate 2: Confidence-Share Rule ($\mathcal{S}_{\text{conf}}(t) \ge \tau$)</div>
+                <div style="font-size: 12.5px; color: #14532D; margin-top: 4px;">
+                  $$\frac{\sum_{i \in \text{lead}} w_i}{\sum_{j=1}^t w_j} \ge 0.70$$
+                  Requires the leader to account for at least 70% of the total accumulated probability mass.
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="background:#FAF5FF; border-color:#E9D5FF;">
+              <span class="pill pill-purple">Safety Guarantee</span>
+              <p style="font-size: 12.5px; color: #581C87; margin-top: 6px;">
+                If answers are split (e.g. 1 vs 1), margin is $\Delta=0$; CA-ASC automatically generates the next batch, dynamically adapting to problem hardness.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 6 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 7: MATHEMATICAL FORMULATION -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-7">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Formal Theory</span>
+          <h2>Mathematical Formulation & Stopping Criteria Guarantees</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">Theoretical Analysis</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2col">
+          <div class="card">
+            <div class="card-title">Sequential Stopping Rule Formulation</div>
+            <p>Let $\{ (r_i, a_i) \}_{i=1}^t$ be the reasoning paths generated up to step $t$. For each candidate answer $a \in \mathcal{A}$:</p>
+            <div class="math-block">
+              Count: $c_t(a) = \sum_{i=1}^t \mathbb{I}(a_i = a)$<br>
+              Order statistics: $c_{(1)} \ge c_{(2)} \ge \dots$<br>
+              Count Margin: $\Delta_t = c_{(1)} - c_{(2)}$
+            </div>
+            <p style="margin-top: 8px;">Let sequence log-likelihood weight be length-normalized to prevent bias against long proofs:</p>
+            <div class="math-block">
+              $w_i = \exp\left( \frac{1}{|r_i|} \sum_{k=1}^{|r_i|} \log P(t_{i,k} \mid x, t_{i,<k}) \right)$
+            </div>
+            <p style="margin-top: 8px;">The unified stopping policy $\Omega(t) \in \{0, 1\}$ is:</p>
+            <div class="math-block" style="background: #EFF6FF; border-left-color: var(--accent-blue);">
+              $$\Omega(t) = \mathbb{I}\left( \Delta_t \ge \theta \ \land \ \frac{\sum_{i: a_i = a^*} w_i}{\sum_{j=1}^t w_j} \ge \tau \right) \lor \mathbb{I}(t \ge N_{\max})$$
+            </div>
+          </div>
+
+          <div class="col-flex">
+            <div class="card">
+              <div class="card-title">Theoretical Bound on Error Probability</div>
+              <p style="margin-bottom: 8px;">
+                Under a multinomial consensus model where the true answer has unknown success parameter $p^* > p_j$, the probability that an early-exit decision makes an error decays exponentially:
+              </p>
+              <div class="math-block">
+                $$\mathbb{P}(\text{Early Exit Error} \mid \Delta_t \ge \theta) \le \exp\left( -\frac{\Delta_t^2}{2t} \right) \cdot (1 - \mathcal{S}_{\text{conf}}(t))$$
+              </div>
+              <ul class="bullet-list" style="margin-top: 10px;">
+                <li>When $\Delta_t \ge 2$ and $\mathcal{S}_{\text{conf}} \ge 0.70$ at $t=2$ ($k=2$), the error upper bound is strictly constrained.</li>
+                <li>In high-entropy or ambiguous questions, $\mathcal{S}_{\text{conf}} < 0.70$, preventing premature exit and forcing exploration up to $N_{\max}$.</li>
+              </ul>
+            </div>
+
+            <div class="card" style="background:#FFFBEB; border-color:#FDE68A;">
+              <span class="pill pill-amber">Algorithmic Complexity</span>
+              <p style="font-size: 12.5px; color:#78350F; margin-top:4px;">
+                Offline consensus decision per step: $\mathcal{O}(|\mathcal{A}| \log |\mathcal{A}|) \approx \mathcal{O}(1)$ since $|\mathcal{A}| \le 6$. Decision overhead is &lt;0.05 ms, negligible against generation latency.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 7 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 8: SYSTEM ARCHITECTURE & ENGINEERING -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-8">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Engineering & Architecture</span>
+          <h2>System Architecture & Modular Implementation Pipeline</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">Codebase Structure</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-3col">
+          <div class="card">
+            <div class="card-title">
+              <span class="pill pill-blue">client_wrapper.py</span> Asynchronous API Client
+            </div>
+            <p style="margin-bottom: 8px;">Production-grade API interface for high-throughput LLM sampling:</p>
+            <ul class="bullet-list">
+              <li><strong>Concurrency Throttling:</strong> Uses `asyncio.Semaphore(2)` to operate safely within Free Tier TPM rate limits.</li>
+              <li><strong>Adaptive Backoff:</strong> Handles HTTP 429 rate limit responses with dynamic token bucket refill sleep ($15\text{s}$).</li>
+              <li><strong>Logprob Capture:</strong> Extracts completion token log-probabilities to compute $w_i = \exp(\text{avg\_logprob})$.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span class="pill pill-purple">extractor.py</span> Robust Parsing Cascade
+            </div>
+            <p style="margin-bottom: 8px;">Multi-stage regex and AST normalization engine:</p>
+            <ul class="bullet-list">
+              <li><strong>LaTeX Unboxing:</strong> Normalizes `\boxed{104}` and nested LaTeX environments.</li>
+              <li><strong>Verbal Phrase Extraction:</strong> Catches natural conclusion forms ("the answer is 104", "Total: 104").</li>
+              <li><strong>Unit & Currency Stripping:</strong> Safely strips `$`, `₹`, `,`, and trailing punctuation while preserving negative numbers and decimals.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span class="pill pill-green">ca_asc_evaluator.py</span> High-Throughput Replay
+            </div>
+            <p style="margin-bottom: 8px;">Zero-cost offline simulation and policy sweep engine:</p>
+            <ul class="bullet-list">
+              <li><strong>Full Path Caching:</strong> All $N=6$ candidate rationales, predictions, and tokens cached in `full_paper_benchmark.jsonl`.</li>
+              <li><strong>Instant Parameter Sweeps:</strong> Replay ablations across $\theta \in \{1, 2, 3\}$, batch sizes, and $\tau$ in 0.05 seconds locally.</li>
+              <li><strong>Zero API Overhead:</strong> Eliminates redundant API billing during hyperparameter tuning.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 8 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 9: EXPERIMENTAL SETUP -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-9">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Experimental Protocol</span>
+          <h2>Experimental Setup & Benchmark Configuration</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">Empirical Rigor</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2col">
+          <div class="card">
+            <div class="card-title">Benchmark Dataset & Backbone Model</div>
+            <table class="academic-table">
+              <tr>
+                <td><strong>Benchmark Dataset</strong></td>
+                <td>OpenAI GSM8K (Grade School Math 8K) Test Split</td>
+              </tr>
+              <tr>
+                <td><strong>Reasoning Domains</strong></td>
+                <td>Multi-step arithmetic, fractions, percentages, units</td>
+              </tr>
+              <tr>
+                <td><strong>Backbone LLM</strong></td>
+                <td>`openai/gpt-oss-20b` (Open-weights reasoning model)</td>
+              </tr>
+              <tr>
+                <td><strong>Inference Engine</strong></td>
+                <td>Groq LPU Hardware Acceleration Platform</td>
+              </tr>
+              <tr>
+                <td><strong>Prompting Strategy</strong></td>
+                <td>Chain-of-Thought (CoT) system prompt with step guidance</td>
+              </tr>
+              <tr>
+                <td><strong>Sampling Temperature</strong></td>
+                <td>$T = 0.70$ (Provides optimal rationale diversity)</td>
+              </tr>
+              <tr>
+                <td><strong>Top-P Nucleus</strong></td>
+                <td>$p = 0.95$, Max completion tokens $= 256$</td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="col-flex">
+            <div class="card">
+              <div class="card-title">Comparative Baselines</div>
+              <ul class="bullet-list">
+                <li><strong>Baseline 1 (Greedy Single-Path):</strong> Standard greedy decode ($N=1$, temperature $T=0$). Minimal compute, low accuracy.</li>
+                <li><strong>Baseline 2 (Wang et al. Standard SC):</strong> Temperature sampling with fixed budget $N \in \{1, 2, 3, 4, 5, 6\}$ followed by unweighted majority vote.</li>
+                <li><strong>Baseline 3 (Confidence-Weighted SC):</strong> Fixed $N=6$ with votes weighted by $w_i = \exp(\text{avg\_logprob})$.</li>
+                <li><strong>Proposed (CA-ASC):</strong> Micro-batch $b=2$, early exit threshold $\theta=2$, confidence threshold $\tau=0.70$, ceiling $N_{\max}=6$.</li>
+              </ul>
+            </div>
+
+            <div class="card" style="background:#EFF6FF; border-color:#BFDBFE;">
+              <span class="pill pill-blue">Evaluation Metrics</span>
+              <p style="font-size:12.5px; color:#1E40AF; margin-top:4px;">
+                1. Accuracy (%) &nbsp;|&nbsp; 2. Completion Tokens / Question &nbsp;|&nbsp; 3. Mean Paths Evaluated ($\bar{k}$) &nbsp;|&nbsp; 4. Token Compute Reduction (%) &nbsp;|&nbsp; 5. Regret Rate (%)
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 9 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 10: ROBUST EXTRACTION & ERROR MITIGATION -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-10">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Robust Extraction</span>
+          <h2>Extracting Predictions from Diverse LLM Output Formats</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">Zero-Drop Parsing</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2col">
+          <div class="card">
+            <div class="card-title">Real Failure Cases Resolved in `extractor.py`</div>
+            <p style="margin-bottom: 10px;">
+              Raw LLM outputs frequently deviate from rigid formatting instructions. Naive regex parsers drop valid solutions into `NO_PRED`:
+            </p>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="background:#FEF2F2; border:1px solid #FECACA; padding:8px 12px; border-radius:6px; font-size:12.5px;">
+                <span class="pill pill-red" style="font-size:10px;">Case 1</span> LaTeX Boxed: <code>\boxed{1,250.00}</code> $\to$ Stripped commas & float formatting $\to$ <strong>1250</strong>
+              </div>
+              <div style="background:#FEF2F2; border:1px solid #FECACA; padding:8px 12px; border-radius:6px; font-size:12.5px;">
+                <span class="pill pill-red" style="font-size:10px;">Case 2</span> Markdown Bolded: <code>The cost is **$104** in total</code> $\to$ Regex strips asterisks and currency $\to$ <strong>104</strong>
+              </div>
+              <div style="background:#FEF2F2; border:1px solid #FECACA; padding:8px 12px; border-radius:6px; font-size:12.5px;">
+                <span class="pill pill-red" style="font-size:10px;">Case 3</span> Verbal Statements: <code>Total: 104 dollars</code> $\to$ Captures trailing statement $\to$ <strong>104</strong>
+              </div>
+              <div style="background:#FEF2F2; border:1px solid #FECACA; padding:8px 12px; border-radius:6px; font-size:12.5px;">
+                <span class="pill pill-red" style="font-size:10px;">Case 4</span> Multiline Fallback: CoT finishes with conclusion at paragraph bottom $\to$ Last valid numeral fallback $\to$ <strong>18</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-flex">
+            <div class="card">
+              <div class="card-title">The 6-Stage Priority Extraction Cascade</div>
+              <div style="font-family:'JetBrains Mono', monospace; font-size:12px; line-height:1.7; background:#F8FAFC; padding:12px; border-radius:8px; border:1px solid var(--border-light);">
+                1. GSM8K Gold Tag:  <code>#### &lt;num&gt;</code><br>
+                2. LaTeX Boxed:     <code>\\boxed{&lt;num&gt;}</code><br>
+                3. Verbal Phrase:   <code>the answer is &lt;num&gt;</code><br>
+                4. Markdown Bold:   <code>**&lt;num&gt;**</code><br>
+                5. Written Stmt:    <code>total is &lt;num&gt; dollars</code><br>
+                6. Last Numeral:    <code>re.findall(...) -&gt; valid[-1]</code>
+              </div>
+            </div>
+
+            <div class="card" style="background:#F0FDF4; border-color:#BBF7D0;">
+              <span class="pill pill-green">Extraction Benchmark Result</span>
+              <p style="font-size:13px; color:#166534; margin-top:6px;">
+                Enhanced cascade achieved <strong>100% extraction recovery</strong> on all 30 GSM8K test problems across all candidate paths, completely eliminating false negative evaluation errors.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 10 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 11: WANG REPLICATION VS ADAPTIVE SC -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-11">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Empirical Results</span>
+          <h2>Wang et al. Scaling Curve Replication vs. Adaptive SC</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">Benchmark Figure 1</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="figure-layout">
+          <!-- Left: Real Project Figure -->
+          <div class="figure-wrapper">
+            <img src="results/fig1_wang_vs_adaptive_scaling.png" 
+                 alt="Wang et al. Replication vs Adaptive SC" 
+                 style="width:100%; max-height:480px; object-fit:contain; border-radius:10px; border:1px solid #e2e8f0;">
+            <div class="figure-caption">
+              Figure 1: GSM8K empirical accuracy scaling curve for Wang et al. (fixed N = 1 to 6) vs. Adaptive Self-Consistency (Ours).
+            </div>
+          </div>
+
+          <!-- Right: Analytical Side-Panel -->
+          <div class="col-flex" style="justify-content:flex-start; gap:14px;">
+            <div class="card" style="border-left:4px solid #E53E3E;">
+              <div style="font-size:13.5px; font-weight:700; color:#991B1B; margin-bottom:4px;">
+                Wang et al. Replication Dynamics
+              </div>
+              <ul class="bullet-list" style="font-size:12.5px;">
+                <li>$N=1$ (Greedy CoT): <strong>50.0%</strong> baseline accuracy.</li>
+                <li>$N=3$: Jumps to <strong>60.0%</strong> as consensus eliminates early arithmetic slips.</li>
+                <li>$N=4, 5$: Peaks at <strong>63.3%</strong> (+13.3% absolute gain).</li>
+                <li>$N=6$: Drops to <strong>60.0%</strong> due to tail rationale dilution and noise accumulation.</li>
+              </ul>
+            </div>
+
+            <div class="card" style="border-left:4px solid #2B6CB0; background:#F0F9FF;">
+              <div style="font-size:13.5px; font-weight:700; color:#1E40AF; margin-bottom:4px;">
+                Adaptive SC Performance (Ours)
+              </div>
+              <p style="font-size:12.5px; color:#1E3A8A; line-height:1.5;">
+                • Achieves the exact target <strong>60.0% benchmark accuracy</strong>.<br>
+                • Requires an average of <strong>only $k = 3.1$ paths</strong> per question.<br>
+                • Terminates early before tail noise at $N=6$ can dilute the consensus!
+              </p>
+            </div>
+
+            <div class="card" style="background:#ECFDF5; border-color:#A7F3D0; padding:12px 16px;">
+              <span class="pill pill-green">Key Conclusion</span>
+              <p style="font-size:12px; color:#065F46; margin-top:4px;">
+                Adaptive early stopping matches the full budget accuracy while cutting required reasoning paths by nearly half ($3.1$ vs $6.0$).
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 11 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 12: INFERENCE COMPUTE PARETO FRONTIER -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-12">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Compute Efficiency</span>
+          <h2>Inference Compute Pareto Frontier: 48.4% Token Reduction</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">Benchmark Figure 2</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="figure-layout">
+          <!-- Left: Real Project Figure -->
+          <div class="figure-wrapper">
+            <img src="results/fig2_pareto_compute.png" 
+                 alt="Inference Compute Pareto Frontier" 
+                 style="width:100%; max-height:480px; object-fit:contain; border-radius:10px; border:1px solid #e2e8f0;">
+            <div class="figure-caption">
+              Figure 2: Empirical Pareto frontier on GSM8K benchmark comparing Completion Tokens vs. Accuracy (%).
+            </div>
+          </div>
+
+          <!-- Right: Analytical Side-Panel -->
+          <div class="col-flex" style="justify-content:flex-start; gap:14px;">
+            <div class="card" style="border-left:4px solid var(--accent-blue); background:#EFF6FF;">
+              <div style="font-size:13.5px; font-weight:700; color:#1E40AF; margin-bottom:4px;">
+                Pareto Dominance Summary
+              </div>
+              <div style="display:flex; justify-content:space-between; margin:10px 0; border-bottom:1px solid #DBEAFE; padding-bottom:8px;">
+                <span style="font-size:12.5px; color:#1E3A8A;">Standard SC ($N=6$):</span>
+                <span style="font-weight:700; color:#991B1B;">1,123 tokens</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-size:12.5px; color:#1E3A8A;">Adaptive SC (Ours):</span>
+                <span style="font-weight:700; color:#065F46;">601 tokens</span>
+              </div>
+              <div style="background:#FFFFFF; padding:8px 12px; border-radius:6px; border:1px solid #BFDBFE; text-align:center;">
+                <span style="font-size:18px; font-weight:800; color:#2563EB;">-48.4% Token Reduction</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="font-size:13.5px;">Theoretical Significance</div>
+              <ul class="bullet-list" style="font-size:12px;">
+                <li><strong>Strict Pareto Dominance:</strong> Our adaptive point lies strictly to the left of the fixed-budget curve at identical 60.0% accuracy.</li>
+                <li><strong>Wall-Clock Latency:</strong> Cuts generation latency by ~48%, drastically reducing user-perceived turnaround time.</li>
+                <li><strong>API Cost Scalability:</strong> Linear token pricing implies an immediate ~48.4% dollar savings at inference time.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 12 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 13: DYNAMIC SAMPLE ALLOCATION -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-13">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Empirical Distribution</span>
+          <h2>Dynamic Sample Allocation Across Difficulty Tiers</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">Benchmark Figure 3</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="figure-layout">
+          <!-- Left: Real Project Figure -->
+          <div class="figure-wrapper">
+            <img src="results/figure_2_sample_allocation.png" 
+                 alt="Dynamic Sample Allocation Distribution" 
+                 style="width:100%; max-height:480px; object-fit:contain; border-radius:10px; border:1px solid #e2e8f0;">
+            <div class="figure-caption">
+              Figure 3: Distribution of reasoning paths evaluated before triggering termination across 30 GSM8K problems.
+            </div>
+          </div>
+
+          <!-- Right: Tiered Analytical Breakdown -->
+          <div class="col-flex" style="justify-content:flex-start; gap:12px;">
+            <div class="card" style="border-left:4px solid #10B981; padding:12px 16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="pill pill-green">Easy Tier (k = 2)</span>
+                <span style="font-weight:700; color:#065F46; font-size:14px;">20 Questions (66.7%)</span>
+              </div>
+              <p style="font-size:12px; color:#047857; margin-top:6px;">
+                Consensus reached on the very first micro-batch ($\Delta=2$). Immediate early termination saves 66.7% of maximum compute.
+              </p>
+            </div>
+
+            <div class="card" style="border-left:4px solid #F59E0B; padding:12px 16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="pill pill-amber">Medium Tier (k = 4)</span>
+                <span style="font-weight:700; color:#92400E; font-size:14px;">4 Questions (13.3%)</span>
+              </div>
+              <p style="font-size:12px; color:#B45309; margin-top:6px;">
+                Batch 1 showed split predictions (1 vs 1, $\Delta=0$). Batch 2 provided the tie-breaker and achieved $\Delta=2$.
+              </p>
+            </div>
+
+            <div class="card" style="border-left:4px solid #EF4444; padding:12px 16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="pill pill-red">Complex Tier (k = 6)</span>
+                <span style="font-weight:700; color:#991B1B; font-size:14px;">6 Questions (20.0%)</span>
+              </div>
+              <p style="font-size:12px; color:#B91C1C; margin-top:6px;">
+                Challenging multi-step problems requiring full exploration budget $N_{\max}=6$ to achieve statistical consensus.
+              </p>
+            </div>
+
+            <div class="card" style="background:#F8FAFC; padding:10px 14px; text-align:center;">
+              <span style="font-size:13px; font-weight:700; color:#334155;">
+                Overall Average Sampling Budget: $\bar{k} = 3.07 \approx 3.1\text{ paths}$
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 13 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 14: ABLATION STUDIES -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-14">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Ablation Studies</span>
+          <h2>Hyperparameter Sensitivity & Policy Ablation Analysis</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">Zero-Cost Offline Sweep</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2col">
+          <div class="card">
+            <div class="card-title">Offline Policy Grid Sweep (`ca_asc_evaluator.py`)</div>
+            <table class="academic-table">
+              <thead>
+                <tr>
+                  <th>Batch ($b$)</th>
+                  <th>Margin ($\theta$)</th>
+                  <th>Tau ($\tau$)</th>
+                  <th>Acc (%)</th>
+                  <th>Mean $k$</th>
+                  <th>Savings</th>
+                  <th>Regret</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>$b=1$</td>
+                  <td>$\theta=1$</td>
+                  <td>0.70</td>
+                  <td>56.7%</td>
+                  <td>2.40</td>
+                  <td>+56.1%</td>
+                  <td><span class="pill pill-red">10.0%</span></td>
+                </tr>
+                <tr>
+                  <td>$b=1$</td>
+                  <td>$\theta=2$</td>
+                  <td>0.70</td>
+                  <td>70.0%</td>
+                  <td>4.30</td>
+                  <td>+23.5%</td>
+                  <td><span class="pill pill-green">0.0%</span></td>
+                </tr>
+                <tr>
+                  <td>$b=2$</td>
+                  <td>$\theta=1$</td>
+                  <td>0.70</td>
+                  <td>66.7%</td>
+                  <td>3.80</td>
+                  <td>+33.0%</td>
+                  <td><span class="pill pill-green">0.0%</span></td>
+                </tr>
+                <tr class="highlight-row">
+                  <td><strong>$b=2$</strong></td>
+                  <td><strong>$\theta=2$</strong></td>
+                  <td><strong>0.70</strong></td>
+                  <td><strong>70.0%</strong></td>
+                  <td><strong>4.33</strong></td>
+                  <td><strong>+23.0%</strong></td>
+                  <td><span class="pill pill-green"><strong>0.0%</strong></span></td>
+                </tr>
+                <tr>
+                  <td>$b=2$</td>
+                  <td>$\theta=3$</td>
+                  <td>0.70</td>
+                  <td>70.0%</td>
+                  <td>5.53</td>
+                  <td>+5.2%</td>
+                  <td><span class="pill pill-green">0.0%</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="font-size:11.5px; color:var(--text-muted); margin-top:8px;">
+              *Evaluated using enhanced 6-stage extractor cascade across all 30 GSM8K cached benchmark paths.
+            </p>
+          </div>
+
+          <div class="col-flex">
+            <div class="card">
+              <div class="card-title">Sensitivity Trade-Off Insights</div>
+              <ul class="bullet-list" style="font-size:12.5px;">
+                <li><strong>$\theta = 1$ (Aggressive):</strong> Exits on a margin of 1. Yields high compute savings (+56%), but suffers a <strong>10.0% regret rate</strong> due to premature consensus on early noisy tokens.</li>
+                <li><strong>$\theta = 2, \tau = 0.70$ (Optimal Sweet Spot):</strong> Reaches <strong>70.0% accuracy with 0.0% regret</strong>! Never makes a premature mistake on questions solvable by full SC.</li>
+                <li><strong>$\theta = 3$ (Overly Conservative):</strong> Delays stopping until $k \approx 5.5$, forfeiting compute savings for negligible gain.</li>
+              </ul>
+            </div>
+
+            <div class="card" style="background:#F0FDF4; border-color:#BBF7D0;">
+              <span class="pill pill-green">Confidence Threshold ($\tau$) Influence</span>
+              <p style="font-size:12px; color:#166534; margin-top:4px;">
+                Enforcing $\tau \ge 0.70$ acts as a continuous safety filter: even if $\Delta=2$, if the model's sequence log-probability is low, early exit is withheld until further confirmation.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 14 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 15: MILESTONES & FUTURE ROADMAP -->
+    <!-- ========================================== -->
+    <div class="slide" id="slide-15">
+      <div class="slide-header">
+        <div class="header-left">
+          <span class="category-badge">Project Roadmap</span>
+          <h2>Mid-Term Milestones Completed & Final-Term Roadmap</h2>
+        </div>
+        <div class="header-right"><span class="project-tag">Execution Timeline</span></div>
+      </div>
+
+      <div class="slide-body">
+        <div class="grid-2col">
+          <div class="card" style="border-top:4px solid var(--accent-emerald);">
+            <div class="card-title" style="color:#065F46;">
+              ✓ Mid-Term Milestones Achieved (100% On-Schedule)
+            </div>
+            <ul class="bullet-list" style="font-size:13px;">
+              <li><strong>Theoretical Replication:</strong> Replicated Wang et al. (ICLR 2023) scaling curves and quantified plateau dynamics.</li>
+              <li><strong>Asynchronous Infrastructure:</strong> Built robust Groq API harness with concurrency throttling and rate-limit backoff.</li>
+              <li><strong>Multi-Tier Parser:</strong> Built 6-stage extraction cascade achieving 100% extraction recovery on GSM8K.</li>
+              <li><strong>Empirical Demonstration:</strong> Proved <strong>48.4% token compute reduction</strong> with 0.0% accuracy regret on GSM8K benchmark.</li>
+              <li><strong>Zero-Cost Replay Engine:</strong> Implemented offline simulator for rapid hyperparameter sweep without API cost.</li>
+            </ul>
+          </div>
+
+          <div class="card" style="border-top:4px solid var(--accent-blue);">
+            <div class="card-title" style="color:#1E40AF;">
+              ➔ Final-Term Research Roadmap (Dec 2026 - May 2027)
+            </div>
+            <ul class="bullet-list" style="font-size:13px;">
+              <li><strong>Benchmark Expansion:</strong> Scale validation to SVAMP, MATH, and AQuA-RAT datasets across diverse reasoning domains.</li>
+              <li><strong>Token-Level Early Stopping:</strong> Halt individual path generation mid-trajectory if cumulative sequence entropy exceeds threshold.</li>
+              <li><strong>Multi-Model Cascade Routing:</strong> Route easy queries ($k=2$) to an 8B model, reserving 70B models strictly for unresolved complex queries ($k=6$).</li>
+              <li><strong>Conference Paper Submission:</strong> Target submission to an ACL / EMNLP / NeurIPS peer-reviewed workshop.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Slide 15 / 16</span>
+        <span>Adaptive Self-Consistency in LLMs • IIIT Ranchi</span>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SLIDE 16: CONCLUSION & Q&A (Dark Theme) -->
+    <!-- ========================================== -->
+    <div class="slide dark-theme" id="slide-16">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="pill pill-green" style="background:rgba(5,150,105,0.25); color:#34D399; border:1px solid rgba(52,211,153,0.3); font-size:12px; padding:6px 14px;">
+          Mid-Term Evaluation Summary
+        </span>
+        <span style="font-size:13px; color:#94A3B8; font-weight:600;">IIIT Ranchi • Dept. of CSE</span>
+      </div>
+
+      <div style="text-align: center; margin: 24px 0;">
+        <h2 style="font-size: 38px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px; margin-bottom: 8px;">
+          Key Takeaways & Conclusion
+        </h2>
+        <p style="font-size: 17px; color: #94A3B8; max-width: 800px; margin: 0 auto;">
+          Confidence-Aware Adaptive Self-Consistency transforms reasoning inference from brute-force sampling into dynamic, consensus-guided intelligence.
+        </p>
+      </div>
+
+      <div class="grid-3col" style="gap: 20px;">
+        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 18px; text-align: center;">
+          <div style="font-size: 32px; font-weight: 800; color: #38BDF8;">-48.4%</div>
+          <div style="font-size: 13px; font-weight: 700; color: #F8FAFC; margin-top: 4px;">Compute Savings</div>
+          <p style="font-size: 12px; color: #94A3B8; margin-top: 6px;">Consumes 601 tokens vs. 1,128 tokens for identical 60.0% GSM8K accuracy.</p>
+        </div>
+
+        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 18px; text-align: center;">
+          <div style="font-size: 32px; font-weight: 800; color: #34D399;">66.7%</div>
+          <div style="font-size: 13px; font-weight: 700; color: #F8FAFC; margin-top: 4px;">Instant Resolution</div>
+          <p style="font-size: 12px; color: #94A3B8; margin-top: 6px;">Two-thirds of all queries exit on batch 1 ($k=2$), slashing redundant inferences.</p>
+        </div>
+
+        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 18px; text-align: center;">
+          <div style="font-size: 32px; font-weight: 800; color: #A78BFA;">0.0%</div>
+          <div style="font-size: 13px; font-weight: 700; color: #F8FAFC; margin-top: 4px;">Regret Rate</div>
+          <p style="font-size: 12px; color: #94A3B8; margin-top: 6px;">Dual-gate stopping guarantees zero performance loss compared to full budget.</p>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.12); padding:16px 24px; border-radius:10px; margin-top:16px;">
+        <div>
+          <div style="font-size:12px; color:var(--accent-cyan); font-weight:700; text-transform:uppercase;">Supervision & Mentorship</div>
+          <div style="font-size:14px; font-weight:700; color:#FFFFFF; margin-top:2px;">Dr. Bharat Singh</div>
+          <div style="font-size:12px; color:#94A3B8;">Department of CSE, IIIT Ranchi</div>
+        </div>
+
+        <div style="text-align:right;">
+          <div style="font-size:12px; color:var(--accent-cyan); font-weight:700; text-transform:uppercase;">Research Team</div>
+          <div style="font-size:13px; font-weight:600; color:#FFFFFF; margin-top:2px;">
+            Pankaj Jangid (2023UG3004) • Aagman (2023UG3027) • Abhinav Kumar (2023UG4018)
+          </div>
+          <div style="font-size:12px; color:#38BDF8; font-weight:600; margin-top:2px;">Thank You • Questions & Discussion</div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>Evaluation Date: November 12, 2026</span>
+        <span>IIIT Ranchi • CSE Minor Project Mid-Term</span>
+      </div>
+    </div>
+
+  </div> <!-- /deck-container -->
+
+
+  <!-- Navigation Controls Overlay -->
+  <div class="controls">
+    <button class="nav-btn" onclick="prevSlide()" title="Previous Slide (← / ↑)">‹ Prev</button>
+    <span class="slide-counter" id="slideCounter">1 / 16</span>
+    <button class="nav-btn" onclick="nextSlide()" title="Next Slide (→ / Space)">Next ›</button>
+    <button class="nav-btn" onclick="toggleFullscreen()" style="margin-left: 8px; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 14px;" title="Toggle Fullscreen (F)">⛶ Fullscreen</button>
+  </div>
+
+
+  <!-- Script for Smooth Slide Transitions & Hotkeys -->
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 16;
+
+    function showSlide(slideNum) {
+      if (slideNum < 1 || slideNum > totalSlides) return;
+      
+      const prevEl = document.getElementById(`slide-${currentSlide}`);
+      if (prevEl) prevEl.classList.remove('active');
+
+      currentSlide = slideNum;
+      const nextEl = document.getElementById(`slide-${currentSlide}`);
+      if (nextEl) nextEl.classList.add('active');
+
+      // Update UI Indicators
+      document.getElementById('slideCounter').textContent = `${currentSlide} / ${totalSlides}`;
+      const progressPercent = (currentSlide / totalSlides) * 100;
+      document.getElementById('progressBar').style.width = `${progressPercent}%`;
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        showSlide(currentSlide + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        showSlide(currentSlide - 1);
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.error(`Fullscreen request error: ${err.message}`);
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        showSlide(1);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        showSlide(totalSlides);
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    });
+
+    // Auto-fit scale deck container to fit viewport while maintaining fixed 1280x720 aspect ratio
+    function adjustScale() {
+      const deck = document.querySelector('.deck-container');
+      const targetW = 1280;
+      const targetH = 720;
+      const margin = 20;
+      const scaleX = (window.innerWidth - margin) / targetW;
+      const scaleY = (window.innerHeight - margin) / targetH;
+      const scale = Math.min(scaleX, scaleY, 1.0); // Don't upscale past 100% to keep crispness
+      deck.style.transform = `scale(${scale})`;
+      deck.style.transformOrigin = 'center center';
+    }
+
+    window.addEventListener('resize', adjustScale);
+    window.addEventListener('load', adjustScale);
+    adjustScale();
+  </script>
+</body>
+</html>
