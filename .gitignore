@@ -1,10 +1,19 @@
+# =====================================================================
 # Byte-compiled / optimized / DLL files
+# =====================================================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 
-# C/C++ extensions
+# =====================================================================
+# Virtual Environments & Python Internals
+# =====================================================================
+.venv/
+venv/
+ENV/
+env/
+.Python
 build/
 develop-eggs/
 dist/
@@ -21,20 +30,31 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environments
-.venv/
-venv/
-ENV/
-env/
-.Python
-
-# Environment Variables & Secrets (Keep .env.example tracked)
+# =====================================================================
+# Environment Variables & Secrets
+# =====================================================================
 .env
 .env.*
 *.env
 !.env.example
 
-# macOS Metadata & Desktop Services
+# =====================================================================
+# Presentations, Slide Generators & Large Binaries
+# =====================================================================
+# Presentation slide decks & generator scripts
+*.pptx
+*.ppt
+generate_presentation_*.py
+generate_*.py
+
+# Large Reference PDFs / Paper downloads
+*.pdf
+2203.11171v4.pdf
+!presentation_script.pdf
+
+# =====================================================================
+# macOS Desktop Services & File Metadata
+# =====================================================================
 .DS_Store
 .DS_Store?
 ._*
@@ -43,7 +63,9 @@ env/
 ehthumbs.db
 Thumbs.db
 
-# IDEs & Text Editors
+# =====================================================================
+# IDEs, Editors & Tooling Caches
+# =====================================================================
 .vscode/
 .idea/
 *.swp
@@ -51,14 +73,9 @@ Thumbs.db
 *~
 *.sublime-workspace
 *.sublime-project
-
-# Large Reference Papers / Binary PDFs (Keep repo lightweight)
-*.pdf
-
-# Temporary files & Logs
+.cache/
+.pytest_cache/
 *.log
 *.tmp
 *.temp
 scratch/
-.cache/
-.pytest_cache/

@@ -1,20 +1,25 @@
 """
 generate_presentation_pptx.py
-Rebuilds a unified, humanized, and highly readable 16-slide PowerPoint presentation (.pptx)
-designed specifically for faculty defense at IIIT Ranchi:
+Builds a cohesive, humanized, and highly readable 16-slide PowerPoint presentation (.pptx)
+for the Mid-Term Evaluation of B.Tech CSE Minor Project at IIIT Ranchi:
 "Adaptive Self-Consistency in Large Language Models".
 
-Design Principles:
-- Single cohesive, unified aesthetic across ALL 16 slides (clean, high-contrast light theme throughout)
-- Zero dark slides: Front page and last page now use the same clean, professional light theme as the rest of the deck
-- Humanized, plain-English academic explanations (designed for faculty evaluation)
-- Clean, readable mathematical formulas rendered with standard mathematical symbols (no broken LaTeX code or raw syntax)
-- Zero text overlap: strict vertical bounding (content: 1.45" to 6.65", footer at 6.85")
-- Native shapes with integrated text_frames (vertical_anchor = MSO_ANCHOR.TOP)
-- Embedded real project empirical figures on Slides 11, 12, and 13 with spacious side-panels
+Supported Themes:
+- "ocean" (Ocean / Sky Theme, Default): Rich coastal sky mist background, top cerulean ribbons, deep navy typography, seafoam teal accents, styled pill badges, designer cards.
+- "forest" (Forest / Nature Theme): Morning sage woodland mist background, top evergreen ribbons, deep pine typography, fresh leaf accents, styled pill badges, designer cards.
+
+Design Highlights:
+- Distinct, professional theme identity (rich palette, stylish category pills, top dual-tone ribbons, accent indicators).
+- Unified palette across ALL 16 slides (no dark slides; consistent academic light theme).
+- Natural, humanized prose designed for computer science faculty evaluation.
+- Clean mathematical notation free of raw LaTeX syntax.
+- Strictly bounded geometry (content: 1.48" to 6.60", footer at 6.85") with ZERO text overlap.
+- Embedded real project empirical figures on Slides 11, 12, and 13 with generous side-panels.
 """
 
+import sys
 import os
+import argparse
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
@@ -22,90 +27,180 @@ from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 
 # -----------------------------------------------------------------------------
-# Unified Color Palette (Consistent across ALL 16 slides)
+# THEME COLOR DEFINITIONS
 # -----------------------------------------------------------------------------
-BG_PAGE = RGBColor(248, 250, 252)       # #F8FAFC (Soft, clean off-white background)
-CARD_BG = RGBColor(255, 255, 255)       # #FFFFFF (Crisp white card container)
-CARD_BORDER = RGBColor(226, 232, 240)   # #E2E8F0 (Subtle slate border)
-CARD_BORDER_BLUE = RGBColor(191, 219, 254) # #BFDBFE (Blue accented border)
-
-TEXT_HEAD = RGBColor(15, 23, 42)        # #0F172A (Deep slate for titles)
-TEXT_BODY = RGBColor(51, 65, 85)        # #334155 (High-contrast slate for readable body text)
-TEXT_MUTED = RGBColor(100, 116, 139)    # #64748B (Secondary / subtitle text)
-
-BLUE_ACCENT = RGBColor(37, 99, 235)     # #2563EB (Primary blue highlight)
-BLUE_DARK = RGBColor(30, 64, 175)       # #1E40AF (Deep navy for emphasis)
-BLUE_TINT = RGBColor(239, 246, 255)     # #EFF6FF (Light blue background for formula callouts)
-
-GREEN_ACCENT = RGBColor(5, 150, 105)    # #059669 (Emerald for success / savings)
-GREEN_TINT = RGBColor(240, 253, 244)    # #F0FDF4 (Light green background)
-
-AMBER_ACCENT = RGBColor(217, 119, 6)    # #D97706 (Amber for cautions / medium tier)
-RED_ACCENT = RGBColor(220, 38, 38)      # #DC2626 (Red for greedy flaws / hard tier)
-PURPLE_ACCENT = RGBColor(109, 40, 217)  # #6D28D9 (Purple for secondary highlights)
+THEMES = {
+    "ocean": {
+        "name": "Ocean / Sky Theme",
+        # Atmosphere & Backgrounds
+        "bg_page": RGBColor(234, 243, 251),            # #EAF3FB (Crisp coastal sky mist)
+        "top_ribbon": RGBColor(2, 132, 199),           # #0284C7 (Vibrant sky cerulean)
+        "top_ribbon_sub": RGBColor(56, 189, 248),      # #38BDF8 (Sky cyan highlight)
+        "bottom_ribbon": RGBColor(186, 215, 242),      # #BAD7F2 (Subtle ocean bottom border)
+        # Cards & Containers
+        "card_bg": RGBColor(255, 255, 255),            # #FFFFFF (Pure crisp white)
+        "card_border": RGBColor(186, 215, 242),        # #BAD7F2 (Oceanic sky border)
+        "card_border_accent": RGBColor(96, 165, 250),  # #60A5FA (Bright blue border)
+        "card_strip": RGBColor(2, 132, 199),           # #0284C7 (Card top accent strip)
+        "card_highlight_bg": RGBColor(224, 242, 254),  # #E0F2FE (Soft sky tint callout)
+        "card_highlight_border": RGBColor(56, 189, 248),# #38BDF8 (Cyan border)
+        # Badges & Pills
+        "badge_bg": RGBColor(224, 242, 254),           # #E0F2FE (Pill badge background)
+        "badge_border": RGBColor(147, 197, 253),       # #93C5FD (Pill border)
+        "badge_text": RGBColor(3, 105, 161),           # #0369A1 (Marine azure text)
+        # Typography
+        "text_head": RGBColor(10, 37, 64),             # #0A2540 (Deep Atlantic midnight navy)
+        "text_body": RGBColor(28, 55, 82),             # #1C3752 (Marine slate)
+        "text_muted": RGBColor(71, 98, 122),          # #47627A (Ocean slate)
+        # Accents
+        "primary_accent": RGBColor(2, 132, 199),       # #0284C7 (Cerulean sky)
+        "secondary_accent": RGBColor(3, 105, 161),     # #0369A1 (Marine azure)
+        "success_accent": RGBColor(13, 148, 136),      # #0D9488 (Seafoam teal)
+        "danger_accent": RGBColor(225, 29, 72),        # #E11D48 (Coral red)
+        "warning_accent": RGBColor(217, 119, 6),       # #D97706 (Amber sun)
+        # Table Styling
+        "table_header_bg": RGBColor(10, 37, 64),       # #0A2540 (Deep ocean navy)
+        "table_header_text": RGBColor(255, 255, 255),  # #FFFFFF
+        "table_row_alt": RGBColor(240, 246, 253),      # #F0F6FD (Alternating row tint)
+        # Stat Pill
+        "stat_badge_bg": RGBColor(224, 242, 254),      # #E0F2FE
+        "stat_badge_text": RGBColor(2, 132, 199),      # #0284C7
+    },
+    "forest": {
+        "name": "Forest / Nature Theme",
+        # Atmosphere & Backgrounds
+        "bg_page": RGBColor(235, 244, 236),            # #EBF4EC (Morning woodland sage mist)
+        "top_ribbon": RGBColor(21, 128, 61),           # #15803D (Deep evergreen forest)
+        "top_ribbon_sub": RGBColor(74, 222, 128),      # #4ADE80 (Spring leaf green)
+        "bottom_ribbon": RGBColor(187, 222, 197),      # #BBDDC5 (Subtle sage bottom border)
+        # Cards & Containers
+        "card_bg": RGBColor(255, 255, 255),            # #FFFFFF (Pure crisp white)
+        "card_border": RGBColor(187, 222, 197),        # #BBDDC5 (Sage leaf border)
+        "card_border_accent": RGBColor(134, 194, 150), # #86C296 (Moss border)
+        "card_strip": RGBColor(21, 128, 61),           # #15803D (Card top accent strip)
+        "card_highlight_bg": RGBColor(220, 245, 227),  # #DCF5E3 (Soft woodland mint callout)
+        "card_highlight_border": RGBColor(34, 197, 94),# #22C55E (Fresh emerald border)
+        # Badges & Pills
+        "badge_bg": RGBColor(220, 252, 231),           # #DCFCE7 (Pill badge background)
+        "badge_border": RGBColor(134, 239, 172),       # #86EFAC (Pill border)
+        "badge_text": RGBColor(20, 83, 45),            # #14532D (Deep forest pine text)
+        # Typography
+        "text_head": RGBColor(15, 46, 26),             # #0F2E1A (Deep pine canopy)
+        "text_body": RGBColor(38, 65, 45),             # #26412D (Woodland slate)
+        "text_muted": RGBColor(78, 108, 88),           # #4E6C58 (Fern slate)
+        # Accents
+        "primary_accent": RGBColor(21, 128, 61),       # #15803D (Forest emerald)
+        "secondary_accent": RGBColor(5, 150, 105),     # #059669 (Mountain pine)
+        "success_accent": RGBColor(22, 163, 74),       # #16A34A (Vivid leaf green)
+        "danger_accent": RGBColor(194, 65, 12),        # #C2410C (Autumn bark)
+        "warning_accent": RGBColor(202, 138, 4),       # #CA8A04 (Warm ochre)
+        # Table Styling
+        "table_header_bg": RGBColor(20, 61, 40),       # #143D28 (Deep pine header)
+        "table_header_text": RGBColor(255, 255, 255),  # #FFFFFF
+        "table_row_alt": RGBColor(241, 248, 242),      # #F1F8F2 (Alternating row tint)
+        # Stat Pill
+        "stat_badge_bg": RGBColor(220, 252, 231),      # #DCFCE7
+        "stat_badge_text": RGBColor(21, 128, 61),      # #15803D
+    }
+}
 
 FONT_FAMILY = "Arial"
 
 
-def build_faculty_deck():
+def build_presentation(theme_key: str = "ocean", output_filename: str = "presentation.pptx"):
+    theme = THEMES.get(theme_key, THEMES["ocean"])
+    print(f"Building presentation with theme: '{theme['name']}' -> {output_filename}")
+
     prs = Presentation()
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
     blank_layout = prs.slide_layouts[6]
 
-    # Helper: Set slide background color
-    def set_slide_background(slide, color=BG_PAGE):
+    # Helper: Set slide background color and top theme ribbons
+    def set_slide_background(slide):
+        # 1. Base atmospheric canvas
         bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, Inches(13.333), Inches(7.5))
         bg.fill.solid()
-        bg.fill.fore_color.rgb = color
-        bg.line.color.rgb = color
+        bg.fill.fore_color.rgb = theme["bg_page"]
+        bg.line.color.rgb = theme["bg_page"]
         slide.shapes._spTree.remove(bg._element)
         slide.shapes._spTree.insert(2, bg._element)
+
+        # 2. Top dual-tone architectural ribbon
+        r1 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, Inches(13.333), Inches(0.08))
+        r1.fill.solid()
+        r1.fill.fore_color.rgb = theme["top_ribbon"]
+        r1.line.color.rgb = theme["top_ribbon"]
+
+        r2 = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, Inches(0.08), Inches(13.333), Inches(0.02))
+        r2.fill.solid()
+        r2.fill.fore_color.rgb = theme["top_ribbon_sub"]
+        r2.line.color.rgb = theme["top_ribbon_sub"]
+
+        # 3. Bottom framing line
+        b_line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, Inches(7.46), Inches(13.333), Inches(0.04))
+        b_line.fill.solid()
+        b_line.fill.fore_color.rgb = theme["bottom_ribbon"]
+        b_line.line.color.rgb = theme["bottom_ribbon"]
+
         return bg
 
     # Helper: Add unified top header (Slides 2 to 15)
     def add_slide_header(slide, category_tag: str, main_title: str, slide_num: int):
-        # Category Tag
-        cat_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.38), Inches(8.5), Inches(0.28))
-        tf = cat_box.text_frame
-        tf.word_wrap = True
-        tf.margin_top = tf.margin_bottom = tf.margin_left = tf.margin_right = 0
-        p = tf.paragraphs[0]
-        p.text = category_tag.upper()
+        # Category Pill Badge (Left)
+        badge_width = Inches(max(2.8, len(category_tag) * 0.13 + 0.6))
+        pill = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(0.28), badge_width, Inches(0.32))
+        pill.fill.solid()
+        pill.fill.fore_color.rgb = theme["badge_bg"]
+        pill.line.color.rgb = theme["badge_border"]
+        pill.line.width = Pt(1)
+        tf_p = pill.text_frame
+        tf_p.word_wrap = False
+        tf_p.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf_p.margin_left = tf_p.margin_right = tf_p.margin_top = tf_p.margin_bottom = 0
+        p = tf_p.paragraphs[0]
+        p.alignment = PP_ALIGN.CENTER
+        p.text = f"●  {category_tag.upper()}"
         p.font.name = FONT_FAMILY
         p.font.size = Pt(9.5)
         p.font.bold = True
-        p.font.color.rgb = BLUE_ACCENT
+        p.font.color.rgb = theme["badge_text"]
+
+        # Academic Institution Tag (Right Pill)
+        tag_box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(9.8), Inches(0.28), Inches(2.733), Inches(0.32))
+        tag_box.fill.solid()
+        tag_box.fill.fore_color.rgb = theme["card_bg"]
+        tag_box.line.color.rgb = theme["card_border"]
+        tag_box.line.width = Pt(1)
+        tf_tag = tag_box.text_frame
+        tf_tag.word_wrap = False
+        tf_tag.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf_tag.margin_left = tf_tag.margin_right = tf_tag.margin_top = tf_tag.margin_bottom = 0
+        p_tag = tf_tag.paragraphs[0]
+        p_tag.alignment = PP_ALIGN.CENTER
+        p_tag.text = "IIIT Ranchi • CSE Minor Project"
+        p_tag.font.name = FONT_FAMILY
+        p_tag.font.size = Pt(9)
+        p_tag.font.bold = True
+        p_tag.font.color.rgb = theme["text_muted"]
 
         # Slide Main Title
-        t_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.66), Inches(9.2), Inches(0.55))
+        t_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.66), Inches(11.733), Inches(0.52))
         tf_t = t_box.text_frame
         tf_t.word_wrap = True
         tf_t.margin_top = tf_t.margin_bottom = tf_t.margin_left = tf_t.margin_right = 0
         p_t = tf_t.paragraphs[0]
         p_t.text = main_title
         p_t.font.name = FONT_FAMILY
-        p_t.font.size = Pt(19)
+        p_t.font.size = Pt(20)
         p_t.font.bold = True
-        p_t.font.color.rgb = TEXT_HEAD
+        p_t.font.color.rgb = theme["text_head"]
 
-        # Right Academic Label
-        tag_box = slide.shapes.add_textbox(Inches(9.2), Inches(0.58), Inches(3.333), Inches(0.40))
-        tf_tag = tag_box.text_frame
-        tf_tag.word_wrap = True
-        p_tag = tf_tag.paragraphs[0]
-        p_tag.alignment = PP_ALIGN.RIGHT
-        p_tag.text = "IIIT Ranchi • CSE Minor Project"
-        p_tag.font.name = FONT_FAMILY
-        p_tag.font.size = Pt(10)
-        p_tag.font.bold = True
-        p_tag.font.color.rgb = TEXT_MUTED
-
-        # Subtle Header Line
-        line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(1.26), Inches(11.733), Inches(0.015))
+        # Clean Header Separator Line
+        line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(1.24), Inches(11.733), Inches(0.018))
         line.fill.solid()
-        line.fill.fore_color.rgb = CARD_BORDER
-        line.line.color.rgb = CARD_BORDER
+        line.fill.fore_color.rgb = theme["card_border"]
+        line.line.color.rgb = theme["card_border"]
 
         # Safe Footer (strictly at 6.85" to guarantee zero overlap)
         f_box = slide.shapes.add_textbox(Inches(0.8), Inches(6.85), Inches(11.733), Inches(0.35))
@@ -115,42 +210,92 @@ def build_faculty_deck():
         p_f.text = f"Slide {slide_num} of 16  |  Adaptive Self-Consistency in LLMs  |  Mid-Term Evaluation (Nov 12, 2026)"
         p_f.font.name = FONT_FAMILY
         p_f.font.size = Pt(9.5)
-        p_f.font.color.rgb = TEXT_MUTED
+        p_f.font.color.rgb = theme["text_muted"]
 
-    # Helper: Create card shape with top vertical anchor
-    def create_card(slide, left, top, width, height, fill_color=CARD_BG, border_color=CARD_BORDER):
+    # Helper: Create card shape with top vertical anchor and designer accent line
+    def create_card(slide, left, top, width, height, fill_color=None, border_color=None, with_accent_bar=True, accent_color=None):
+        if fill_color is None:
+            fill_color = theme["card_bg"]
+        if border_color is None:
+            border_color = theme["card_border"]
+
         card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
         card.fill.solid()
         card.fill.fore_color.rgb = fill_color
         card.line.color.rgb = border_color
-        card.line.width = Pt(1)
+        card.line.width = Pt(1.5)
         tf = card.text_frame
         tf.word_wrap = True
         tf.vertical_anchor = MSO_ANCHOR.TOP
-        tf.margin_left = Inches(0.20)
-        tf.margin_right = Inches(0.20)
-        tf.margin_top = Inches(0.18)
+        tf.margin_left = Inches(0.22)
+        tf.margin_right = Inches(0.22)
+        tf.margin_top = Inches(0.20)
         tf.margin_bottom = Inches(0.18)
+
+        # Optional top interior accent indicator
+        if with_accent_bar:
+            acc_col = accent_color if accent_color else theme["primary_accent"]
+            bar = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left + Inches(0.22), top + Inches(0.10), Inches(0.75), Inches(0.04))
+            bar.fill.solid()
+            bar.fill.fore_color.rgb = acc_col
+            bar.line.fill.background()
+
         return card
 
+    # Helper: Add formatted bullet point with colored arrow run
+    def add_bullet_point(tf, title, desc, bullet_color=None, space_after=Pt(6), font_size=Pt(10.5)):
+        p = tf.add_paragraph()
+        p.space_after = space_after
+
+        # Colored bullet glyph
+        r_b = p.add_run()
+        r_b.text = "▸  "
+        r_b.font.name = FONT_FAMILY
+        r_b.font.size = font_size
+        r_b.font.bold = True
+        r_b.font.color.rgb = bullet_color if bullet_color else theme["primary_accent"]
+
+        # Bold title
+        r_t = p.add_run()
+        r_t.text = title
+        r_t.font.name = FONT_FAMILY
+        r_t.font.size = font_size
+        r_t.font.bold = True
+        r_t.font.color.rgb = theme["text_head"]
+
+        # Normal body
+        r_d = p.add_run()
+        r_d.text = desc
+        r_d.font.name = FONT_FAMILY
+        r_d.font.size = font_size
+        r_d.font.bold = False
+        r_d.font.color.rgb = theme["text_body"]
+        return p
+
     # =========================================================================
-    # SLIDE 1: TITLE SLIDE (Cohesive Light Theme)
+    # SLIDE 1: TITLE SLIDE (Unified Theme)
     # =========================================================================
     s1 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s1, BG_PAGE)
+    set_slide_background(s1)
 
     # University & Department Tag (Centered Pill)
-    pill = create_card(s1, Inches(0.8), Inches(0.65), Inches(5.8), Inches(0.40), fill_color=CARD_BG, border_color=CARD_BORDER_BLUE)
-    p = pill.text_frame.paragraphs[0]
-    p.text = "B.TECH CSE MINOR PROJECT • MID-TERM EVALUATION"
+    pill1 = s1.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(0.55), Inches(6.8), Inches(0.38))
+    pill1.fill.solid()
+    pill1.fill.fore_color.rgb = theme["badge_bg"]
+    pill1.line.color.rgb = theme["badge_border"]
+    pill1.line.width = Pt(1)
+    tf1 = pill1.text_frame
+    tf1.vertical_anchor = MSO_ANCHOR.MIDDLE
+    p = tf1.paragraphs[0]
+    p.text = "●  B.TECH CSE MINOR PROJECT • MID-TERM EVALUATION"
     p.font.name = FONT_FAMILY
     p.font.size = Pt(10)
     p.font.bold = True
-    p.font.color.rgb = BLUE_ACCENT
+    p.font.color.rgb = theme["badge_text"]
     p.alignment = PP_ALIGN.CENTER
 
     # Title & Subtitle Box
-    t_box = s1.shapes.add_textbox(Inches(0.8), Inches(1.20), Inches(11.733), Inches(2.1))
+    t_box = s1.shapes.add_textbox(Inches(0.8), Inches(1.08), Inches(11.733), Inches(2.2))
     tf = t_box.text_frame
     tf.word_wrap = True
     p1 = tf.paragraphs[0]
@@ -158,30 +303,31 @@ def build_faculty_deck():
     p1.font.name = FONT_FAMILY
     p1.font.size = Pt(32)
     p1.font.bold = True
-    p1.font.color.rgb = TEXT_HEAD
+    p1.font.color.rgb = theme["text_head"]
     p1.space_after = Pt(8)
 
     p2 = tf.add_paragraph()
     p2.text = "Dynamic Early Stopping for Efficient and Accurate Multi-Step Reasoning"
     p2.font.name = FONT_FAMILY
     p2.font.size = Pt(16)
-    p2.font.color.rgb = BLUE_DARK
-    p2.space_after = Pt(4)
+    p2.font.bold = True
+    p2.font.color.rgb = theme["secondary_accent"]
+    p2.space_after = Pt(6)
 
     p3 = tf.add_paragraph()
     p3.text = "Department of Computer Science & Engineering, Indian Institute of Information Technology (IIIT) Ranchi"
     p3.font.name = FONT_FAMILY
     p3.font.size = Pt(13)
-    p3.font.color.rgb = TEXT_MUTED
+    p3.font.color.rgb = theme["text_muted"]
 
     # Team & Supervisor Side-by-Side Cards (Top: 3.55", Height: 2.70", Bottom: 6.25")
-    card_team = create_card(s1, Inches(0.8), Inches(3.55), Inches(5.7), Inches(2.70), fill_color=CARD_BG, border_color=CARD_BORDER)
+    card_team = create_card(s1, Inches(0.8), Inches(3.55), Inches(5.7), Inches(2.70), accent_color=theme["primary_accent"])
     tf = card_team.text_frame
     p = tf.paragraphs[0]
     p.text = "STUDENT INVESTIGATORS"
-    p.font.size = Pt(11)
+    p.font.size = Pt(11.5)
     p.font.bold = True
-    p.font.color.rgb = BLUE_ACCENT
+    p.font.color.rgb = theme["primary_accent"]
     p.space_after = Pt(10)
 
     students = [
@@ -191,66 +337,72 @@ def build_faculty_deck():
     ]
     for name, reg in students:
         pm = tf.add_paragraph()
-        pm.text = f"• {name}  "
-        pm.font.size = Pt(12.5)
-        pm.font.bold = True
-        pm.font.color.rgb = TEXT_HEAD
-        pm.space_after = Pt(6)
-        r = pm.add_run()
-        r.text = f"({reg})"
-        r.font.bold = False
-        r.font.color.rgb = TEXT_MUTED
+        pm.space_after = Pt(8)
+        rb = pm.add_run()
+        rb.text = "▸  "
+        rb.font.bold = True
+        rb.font.color.rgb = theme["primary_accent"]
+        rn = pm.add_run()
+        rn.text = f"{name}   "
+        rn.font.size = Pt(13)
+        rn.font.bold = True
+        rn.font.color.rgb = theme["text_head"]
+        rr = pm.add_run()
+        rr.text = f"({reg})"
+        rr.font.size = Pt(11)
+        rr.font.bold = False
+        rr.font.color.rgb = theme["text_muted"]
 
-    card_sup = create_card(s1, Inches(6.833), Inches(3.55), Inches(5.7), Inches(2.70), fill_color=CARD_BG, border_color=CARD_BORDER)
+    card_sup = create_card(s1, Inches(6.833), Inches(3.55), Inches(5.7), Inches(2.70), accent_color=theme["secondary_accent"])
     tf = card_sup.text_frame
     p = tf.paragraphs[0]
     p.text = "PROJECT SUPERVISOR & INSTITUTION"
-    p.font.size = Pt(11)
+    p.font.size = Pt(11.5)
     p.font.bold = True
-    p.font.color.rgb = BLUE_ACCENT
+    p.font.color.rgb = theme["primary_accent"]
     p.space_after = Pt(10)
 
     p = tf.add_paragraph()
     p.text = "Dr. Bharat Singh"
-    p.font.size = Pt(15)
+    p.font.size = Pt(15.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_HEAD
+    p.font.color.rgb = theme["text_head"]
     p.space_after = Pt(4)
 
     p = tf.add_paragraph()
-    p.text = "Assistant Professor\nDepartment of Computer Science & Engineering"
-    p.font.size = Pt(12)
-    p.font.color.rgb = TEXT_BODY
-    p.space_after = Pt(6)
+    p.text = "Assistant Professor, Department of Computer Science & Engineering\nIndian Institute of Information Technology Ranchi\nJharkhand, India"
+    p.font.size = Pt(11.5)
+    p.font.color.rgb = theme["text_body"]
+    p.space_after = Pt(10)
 
     p = tf.add_paragraph()
-    p.text = "Indian Institute of Information Technology (IIIT) Ranchi"
-    p.font.size = Pt(12.5)
+    p.text = "Evaluation Date: November 12, 2026 • Academic Year 2026-27"
+    p.font.size = Pt(10.5)
     p.font.bold = True
-    p.font.color.rgb = BLUE_DARK
+    p.font.color.rgb = theme["secondary_accent"]
 
     # Footer
     f_box = s1.shapes.add_textbox(Inches(0.8), Inches(6.85), Inches(11.733), Inches(0.35))
     p = f_box.text_frame.paragraphs[0]
     p.text = "Mid-Term Evaluation Date: November 12, 2026  |  IIIT Ranchi CSE Minor Project"
     p.font.size = Pt(9.5)
-    p.font.color.rgb = TEXT_MUTED
+    p.font.color.rgb = theme["text_muted"]
 
     # =========================================================================
     # SLIDE 2: THE PROBLEM (Humanized, Intuitive)
     # =========================================================================
     s2 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s2, BG_PAGE)
+    set_slide_background(s2)
     add_slide_header(s2, "Motivation & Problem Statement", "The Problem: Why LLMs Make Mistakes in Math Problems", 2)
 
     # Left: The Greedy Flaw
-    c1 = create_card(s2, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
+    c1 = create_card(s2, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["danger_accent"])
     tf = c1.text_frame
     p = tf.paragraphs[0]
     p.text = "The Flaw with Standard Single-Answer (Greedy) Decoding"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = RED_ACCENT
+    p.font.color.rgb = theme["danger_accent"]
     p.space_after = Pt(10)
 
     points2_left = [
@@ -260,45 +412,36 @@ def build_faculty_deck():
         ("False Confidence: ", "The model cannot tell you when it made a mistake — it outputs the wrong final number with the exact same high confidence as a correct one.")
     ]
     for title, desc in points2_left:
-        p = tf.add_paragraph()
-        p.text = "• " + title
-        p.font.size = Pt(11)
-        p.font.bold = True
-        p.font.color.rgb = TEXT_HEAD
-        r = p.add_run()
-        r.text = desc
-        r.font.bold = False
-        r.font.color.rgb = TEXT_BODY
-        p.space_after = Pt(6)
+        add_bullet_point(tf, title, desc, bullet_color=theme["danger_accent"], space_after=Pt(8))
 
     # Right: Real Question Example
-    c2 = create_card(s2, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
+    c2 = create_card(s2, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["secondary_accent"])
     tf = c2.text_frame
     p = tf.paragraphs[0]
     p.text = "Real Example: How Diverse Thinking Solves the Problem"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = BLUE_DARK
+    p.font.color.rgb = theme["secondary_accent"]
     p.space_after = Pt(8)
 
     p_q = tf.add_paragraph()
     p_q.text = "Question: Janet has 16 eggs. She eats 3 for breakfast and bakes muffins with 4. She sells the rest for $2 each. How much does she make?"
     p_q.font.size = Pt(10.5)
     p_q.font.italic = True
-    p_q.font.color.rgb = TEXT_BODY
+    p_q.font.color.rgb = theme["text_body"]
     p_q.space_after = Pt(10)
 
     paths2 = [
-        ("Reasoning Path 1 (Subtraction first):", "16 - 3 = 13 remaining. 13 - 4 = 9 eggs left. 9 * $2 = $18.", "Answer: 18 (Correct ✓)", GREEN_ACCENT),
-        ("Reasoning Path 2 (Grouping used):", "Total used: 3 + 4 = 7 eggs. Left: 16 - 7 = 9 eggs. 9 * $2 = $18.", "Answer: 18 (Correct ✓)", GREEN_ACCENT),
-        ("Reasoning Path 3 (Arithmetic slip):", "Eggs left: 16 - 7 = 8 eggs. 8 * $2 = $16.", "Answer: 16 (Flawed ✗)", RED_ACCENT)
+        ("Reasoning Path 1 (Subtraction first):", "16 - 3 = 13 remaining. 13 - 4 = 9 eggs left. 9 * $2 = $18.", "Answer: 18 (Correct ✓)", theme["success_accent"]),
+        ("Reasoning Path 2 (Grouping used):", "Total used: 3 + 4 = 7 eggs. Left: 16 - 7 = 9 eggs. 9 * $2 = $18.", "Answer: 18 (Correct ✓)", theme["success_accent"]),
+        ("Reasoning Path 3 (Arithmetic slip):", "Eggs left: 16 - 7 = 8 eggs. 8 * $2 = $16.", "Answer: 16 (Flawed ✗)", theme["danger_accent"])
     ]
     for p_title, p_desc, p_ans, p_col in paths2:
         p = tf.add_paragraph()
         p.text = p_title
         p.font.size = Pt(10.5)
         p.font.bold = True
-        p.font.color.rgb = TEXT_HEAD
+        p.font.color.rgb = theme["text_head"]
         r = tf.add_paragraph()
         r.text = p_desc + "  " + p_ans
         r.font.size = Pt(10.5)
@@ -309,29 +452,29 @@ def build_faculty_deck():
     p_takeaway.text = "The Key Intuition: Correct reasoning paths agree on the same answer ($18). Incorrect attempts make different random errors ($16)."
     p_takeaway.font.size = Pt(10.5)
     p_takeaway.font.bold = True
-    p_takeaway.font.color.rgb = BLUE_DARK
+    p_takeaway.font.color.rgb = theme["secondary_accent"]
 
     # =========================================================================
     # SLIDE 3: SELF-CONSISTENCY FOUNDATION
     # =========================================================================
     s3 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s3, BG_PAGE)
+    set_slide_background(s3)
     add_slide_header(s3, "Theoretical Background", "The Existing Foundation: Self-Consistency (Wang et al., ICLR 2023)", 3)
 
     # Left: The Method & Clear Formulation
-    c1 = create_card(s3, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
+    c1 = create_card(s3, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["secondary_accent"])
     tf = c1.text_frame
     p = tf.paragraphs[0]
     p.text = "How Majority Voting Works in Self-Consistency"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = BLUE_DARK
+    p.font.color.rgb = theme["secondary_accent"]
     p.space_after = Pt(8)
 
     p_desc = tf.add_paragraph()
     p_desc.text = "Instead of asking the LLM only once, Wang et al. sample multiple distinct reasoning attempts and take a majority vote over the final answers."
     p_desc.font.size = Pt(11)
-    p_desc.font.color.rgb = TEXT_BODY
+    p_desc.font.color.rgb = theme["text_body"]
     p_desc.space_after = Pt(10)
 
     # Clean Formula Callout Box
@@ -339,41 +482,41 @@ def build_faculty_deck():
     f1.text = "1. Majority Voting Rule (Selecting Most Common Answer):"
     f1.font.size = Pt(11)
     f1.font.bold = True
-    f1.font.color.rgb = TEXT_HEAD
+    f1.font.color.rgb = theme["text_head"]
     f1_box = tf.add_paragraph()
     f1_box.text = "   Final Answer = Answer with the highest vote count"
     f1_box.font.name = "Arial"
     f1_box.font.size = Pt(11)
     f1_box.font.bold = True
-    f1_box.font.color.rgb = BLUE_ACCENT
+    f1_box.font.color.rgb = theme["primary_accent"]
     f1_box.space_after = Pt(10)
 
     f2 = tf.add_paragraph()
     f2.text = "2. Confidence-Weighted Rule (Accounting for Model Certainty):"
     f2.font.size = Pt(11)
     f2.font.bold = True
-    f2.font.color.rgb = TEXT_HEAD
+    f2.font.color.rgb = theme["text_head"]
     f2_box = tf.add_paragraph()
     f2_box.text = "   Path Weight = exp( Average Log-Probability of Generated Tokens )\n   Final Answer = Answer with highest total accumulated weight"
     f2_box.font.name = "Arial"
     f2_box.font.size = Pt(10.5)
     f2_box.font.bold = True
-    f2_box.font.color.rgb = PURPLE_ACCENT
+    f2_box.font.color.rgb = theme["secondary_accent"]
     f2_box.space_after = Pt(10)
 
     p_note = tf.add_paragraph()
     p_note.text = "Core Takeaway: Taking the majority vote acts as an unsupervised verifier. It requires zero extra training or human labeling."
     p_note.font.size = Pt(10.5)
-    p_note.font.color.rgb = TEXT_MUTED
+    p_note.font.color.rgb = theme["text_muted"]
 
     # Right: Published Gains Table
-    c2 = create_card(s3, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
+    c2 = create_card(s3, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["primary_accent"])
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
     p.text = "Empirical Accuracy Gains Reported by Wang et al."
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_HEAD
+    p.font.color.rgb = theme["text_head"]
     p.space_after = Pt(8)
 
     rows, cols = 7, 5
@@ -392,12 +535,12 @@ def build_faculty_deck():
         cell.margin_top = cell.margin_bottom = Inches(0.04)
         cell.margin_left = cell.margin_right = Inches(0.06)
         cell.fill.solid()
-        cell.fill.fore_color.rgb = RGBColor(241, 245, 249)
+        cell.fill.fore_color.rgb = theme["table_header_bg"]
         p = cell.text_frame.paragraphs[0]
         p.font.name = FONT_FAMILY
         p.font.size = Pt(9.5)
         p.font.bold = True
-        p.font.color.rgb = TEXT_HEAD
+        p.font.color.rgb = theme["table_header_text"]
 
     data3 = [
         ("PaLM-540B", "GSM8K", "56.5%", "74.4%", "+17.9%"),
@@ -408,15 +551,18 @@ def build_faculty_deck():
         ("GPT-3 (002)", "GSM8K", "60.1%", "78.0%", "+17.9%")
     ]
     for r_idx, row_data in enumerate(data3):
+        row_fill = theme["table_row_alt"] if r_idx % 2 == 1 else theme["card_bg"]
         for c_idx, val in enumerate(row_data):
             cell = t.cell(r_idx + 1, c_idx)
             cell.text = val
             cell.margin_top = cell.margin_bottom = Inches(0.04)
             cell.margin_left = cell.margin_right = Inches(0.06)
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = row_fill
             p = cell.text_frame.paragraphs[0]
             p.font.name = FONT_FAMILY
             p.font.size = Pt(9.5)
-            p.font.color.rgb = GREEN_ACCENT if c_idx == 4 else TEXT_HEAD
+            p.font.color.rgb = theme["success_accent"] if c_idx == 4 else theme["text_head"]
             if c_idx == 4 or c_idx == 0:
                 p.font.bold = True
 
@@ -426,35 +572,35 @@ def build_faculty_deck():
     p = tf_tn.paragraphs[0]
     p.text = "Key Observation: Self-consistency provides major gains (+10% to +18%), but it forces every question to generate a large fixed number of paths."
     p.font.size = Pt(9.5)
-    p.font.color.rgb = TEXT_MUTED
+    p.font.color.rgb = theme["text_muted"]
 
     # =========================================================================
     # SLIDE 4: THE STATIC BUDGET TAX
     # =========================================================================
     s4 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s4, BG_PAGE)
+    set_slide_background(s4)
     add_slide_header(s4, "The Practical Limitation", "Why Fixed Sampling (N=40) Wastes Huge Compute and Time", 4)
 
     pillars = [
-        ("The 'One-Size-Fits-All' Waste", RED_ACCENT, [
-            "Fixed Sample Budget: Standard self-consistency forces 10 to 40 paths on every single problem unconditionally.",
-            "Trivial Overkill: For an elementary problem (e.g. 15 - 7 = 8), the first 2 paths already agree 100%. Generating 38 more paths is completely pointless.",
-            "Wasted Resources: Up to 80-90% of token compute on easy problems is spent confirming an answer that is already obvious."
+        ("The 'One-Size-Fits-All' Waste", theme["danger_accent"], [
+            ("Fixed Sample Budget: ", "Standard self-consistency forces 10 to 40 paths on every single problem unconditionally."),
+            ("Trivial Overkill: ", "For an elementary problem (e.g. 15 - 7 = 8), the first 2 paths already agree 100%. Generating 38 more paths is completely pointless."),
+            ("Wasted Resources: ", "Up to 80-90% of token compute on easy problems is spent confirming an answer that is already obvious.")
         ]),
-        ("Diminishing Returns (Plateau)", AMBER_ACCENT, [
-            "Quick Initial Gains: Most accuracy gains occur within the first 3 to 5 paths.",
-            "Flat Accuracy Curve: As shown in Wang et al. Figure 2, scaling from 10 to 40 paths yields less than 1.5% accuracy gain.",
-            "Extreme Cost: Generating 40 paths costs 40x the API tokens, takes 40x longer, and easily exceeds free-tier rate limits."
+        ("Diminishing Returns (Plateau)", theme["warning_accent"], [
+            ("Quick Initial Gains: ", "Most accuracy gains occur within the first 3 to 5 paths."),
+            ("Flat Accuracy Curve: ", "As shown in Wang et al. Figure 2, scaling from 10 to 40 paths yields less than 1.5% accuracy gain."),
+            ("Extreme Cost: ", "Generating 40 paths costs 40x the API tokens, takes 40x longer, and easily exceeds free-tier rate limits.")
         ]),
-        ("Noise in the Tail (Dilution)", RED_ACCENT, [
-            "Accumulation of Hallucinations: When sampling dozens of times at temperature 0.7, rare errors and flawed logic begin to accumulate.",
-            "Empirical Evidence: In our own GSM8K benchmark, accuracy reached 63.3% at 4 paths, but fell back to 60.0% at 6 paths due to noisy tails.",
-            "Spurious Agreement: Bad paths can sometimes randomly agree on the same wrong number, confusing the majority vote."
+        ("Noise in the Tail (Dilution)", theme["danger_accent"], [
+            ("Accumulation of Errors: ", "When sampling dozens of times at temperature 0.7, rare errors and flawed logic begin to accumulate."),
+            ("Empirical Evidence: ", "In our own GSM8K benchmark, accuracy reached 63.3% at 4 paths, but fell back to 60.0% at 6 paths due to noisy tails."),
+            ("Spurious Agreement: ", "Bad paths can sometimes randomly agree on the same wrong number, confusing the majority vote.")
         ])
     ]
     for i, (p_title, p_color, p_bullets) in enumerate(pillars):
         x = Inches(0.8 + i * 4.0)
-        card = create_card(s4, x, Inches(1.48), Inches(3.733), Inches(5.12))
+        card = create_card(s4, x, Inches(1.48), Inches(3.733), Inches(5.12), accent_color=p_color)
         tf = card.text_frame
         p = tf.paragraphs[0]
         p.text = p_title
@@ -463,34 +609,30 @@ def build_faculty_deck():
         p.font.color.rgb = p_color
         p.space_after = Pt(10)
 
-        for b in p_bullets:
-            pb = tf.add_paragraph()
-            pb.text = "• " + b
-            pb.font.size = Pt(10.5)
-            pb.font.color.rgb = TEXT_BODY
-            pb.space_after = Pt(8)
+        for b_title, b_desc in p_bullets:
+            add_bullet_point(tf, b_title, b_desc, bullet_color=p_color, space_after=Pt(8))
 
     # =========================================================================
     # SLIDE 5: OUR RESEARCH OBJECTIVES
     # =========================================================================
     s5 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s5, BG_PAGE)
+    set_slide_background(s5)
     add_slide_header(s5, "Project Objectives", "Our Goal: Stopping Early Once Consensus Is Reached", 5)
 
     # Top Goal Card
-    stmt_card = create_card(s5, Inches(0.8), Inches(1.48), Inches(11.733), Inches(1.05), fill_color=CARD_BG, border_color=CARD_BORDER_BLUE)
+    stmt_card = create_card(s5, Inches(0.8), Inches(1.48), Inches(11.733), Inches(1.05), fill_color=theme["card_highlight_bg"], border_color=theme["card_highlight_border"])
     tf = stmt_card.text_frame
     p1 = tf.paragraphs[0]
     p1.text = "CORE RESEARCH QUESTION"
     p1.font.size = Pt(10)
     p1.font.bold = True
-    p1.font.color.rgb = BLUE_ACCENT
+    p1.font.color.rgb = theme["primary_accent"]
     p1.space_after = Pt(2)
     p2 = tf.add_paragraph()
     p2.text = "\"Can an LLM recognize when it has reached a clear consensus, allowing it to stop generating early and cut compute by >40% without losing any reasoning accuracy?\""
     p2.font.size = Pt(12.5)
     p2.font.bold = True
-    p2.font.color.rgb = TEXT_HEAD
+    p2.font.color.rgb = theme["text_head"]
 
     # 3 Objective Cards
     stat_targets = [
@@ -500,61 +642,57 @@ def build_faculty_deck():
     ]
     for i, (num, lbl, desc) in enumerate(stat_targets):
         x = Inches(0.8 + i * 4.0)
-        card = create_card(s5, x, Inches(2.68), Inches(3.733), Inches(2.10))
+        card = create_card(s5, x, Inches(2.68), Inches(3.733), Inches(2.10), accent_color=theme["secondary_accent"])
         tf = card.text_frame
         p_num = tf.paragraphs[0]
         p_num.text = num
         p_num.font.size = Pt(15)
         p_num.font.bold = True
-        p_num.font.color.rgb = BLUE_DARK
+        p_num.font.color.rgb = theme["secondary_accent"]
         p_lbl = tf.add_paragraph()
         p_lbl.text = lbl
         p_lbl.font.size = Pt(10)
         p_lbl.font.bold = True
-        p_lbl.font.color.rgb = TEXT_HEAD
+        p_lbl.font.color.rgb = theme["text_head"]
         p_lbl.space_after = Pt(4)
         p_desc = tf.add_paragraph()
         p_desc.text = desc
         p_desc.font.size = Pt(10.5)
-        p_desc.font.color.rgb = TEXT_BODY
+        p_desc.font.color.rgb = theme["text_body"]
 
     # Bottom Practical Benefits Card
-    bot_card = create_card(s5, Inches(0.8), Inches(4.93), Inches(11.733), Inches(1.67))
+    bot_card = create_card(s5, Inches(0.8), Inches(4.93), Inches(11.733), Inches(1.67), accent_color=theme["primary_accent"])
     tf = bot_card.text_frame
     p = tf.paragraphs[0]
     p.text = "Why This Matters in Practice:"
     p.font.size = Pt(12)
     p.font.bold = True
-    p.font.color.rgb = TEXT_HEAD
+    p.font.color.rgb = theme["text_head"]
     p.space_after = Pt(4)
 
     deliverables = [
-        "Faster User Experience: Easy questions return answers in 1-2 seconds instead of making the user wait 15 seconds.",
-        "API Cost Savings: Token usage directly determines cloud API costs; cutting tokens by ~48% directly cuts the bill in half.",
-        "Rate Limit Protection: Generating fewer paths prevents exhausting requests-per-minute (RPM) and tokens-per-minute (TPM) quotas."
+        ("Faster User Experience: ", "Easy questions return answers in 1-2 seconds instead of making the user wait 15 seconds."),
+        ("API Cost Savings: ", "Token usage directly determines cloud API costs; cutting tokens by ~48% directly cuts the bill in half."),
+        ("Rate Limit Protection: ", "Generating fewer paths prevents exhausting requests-per-minute (RPM) and tokens-per-minute (TPM) quotas.")
     ]
-    for d in deliverables:
-        pd = tf.add_paragraph()
-        pd.text = "• " + d
-        pd.font.size = Pt(10.5)
-        pd.font.color.rgb = TEXT_BODY
-        pd.space_after = Pt(2)
+    for d_title, d_desc in deliverables:
+        add_bullet_point(tf, d_title, d_desc, bullet_color=theme["primary_accent"], space_after=Pt(3))
 
     # =========================================================================
     # SLIDE 6: PROPOSED METHODOLOGY
     # =========================================================================
     s6 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s6, BG_PAGE)
+    set_slide_background(s6)
     add_slide_header(s6, "Methodology", "How Our System Works: Confidence-Aware Adaptive Self-Consistency", 6)
 
     # Left: Step-by-Step Flow
-    c1 = create_card(s6, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
+    c1 = create_card(s6, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["secondary_accent"])
     tf = c1.text_frame
     p = tf.paragraphs[0]
     p.text = "The 5-Step Adaptive Evaluation Loop"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = BLUE_DARK
+    p.font.color.rgb = theme["secondary_accent"]
     p.space_after = Pt(8)
 
     steps = [
@@ -569,21 +707,21 @@ def build_faculty_deck():
         p.text = s_title
         p.font.size = Pt(11)
         p.font.bold = True
-        p.font.color.rgb = TEXT_HEAD
+        p.font.color.rgb = theme["text_head"]
         r = tf.add_paragraph()
         r.text = s_desc
         r.font.size = Pt(10)
-        r.font.color.rgb = TEXT_BODY
+        r.font.color.rgb = theme["text_body"]
         r.space_after = Pt(4)
 
     # Right: The Dual Stopping Criteria
-    c2 = create_card(s6, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
+    c2 = create_card(s6, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["primary_accent"])
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
     p.text = "The Dual Stopping Criteria (Both Must Be True)"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_HEAD
+    p.font.color.rgb = theme["text_head"]
     p.space_after = Pt(10)
 
     # Gate 1 Box
@@ -591,11 +729,11 @@ def build_faculty_deck():
     p_g1.text = "CONDITION 1: Lead Margin of At Least 2 Votes"
     p_g1.font.size = Pt(11.5)
     p_g1.font.bold = True
-    p_g1.font.color.rgb = BLUE_ACCENT
+    p_g1.font.color.rgb = theme["primary_accent"]
     p_g1_d = tf2.add_paragraph()
     p_g1_d.text = "Margin = (Votes for Top Answer) - (Votes for Runner-Up) >= 2\n• If first 2 paths agree (2 vs 0) -> Lead is 2. (Passes!)\n• If first 2 paths disagree (1 vs 1) -> Lead is 0. (Fails, generate more paths)."
     p_g1_d.font.size = Pt(10.5)
-    p_g1_d.font.color.rgb = TEXT_BODY
+    p_g1_d.font.color.rgb = theme["text_body"]
     p_g1_d.space_after = Pt(10)
 
     # Gate 2 Box
@@ -603,34 +741,34 @@ def build_faculty_deck():
     p_g2.text = "CONDITION 2: High Model Confidence Share (>= 70%)"
     p_g2.font.size = Pt(11.5)
     p_g2.font.bold = True
-    p_g2.font.color.rgb = GREEN_ACCENT
+    p_g2.font.color.rgb = theme["success_accent"]
     p_g2_d = tf2.add_paragraph()
     p_g2_d.text = "Confidence Share = (Weight of Lead Answer) / (Total Weight of All Paths) >= 70%\n• Ensures the model wasn't just 'hesitant' or guessing.\n• Even if 2 paths agree, if token probabilities are unusually low, the system continues sampling to double-check."
     p_g2_d.font.size = Pt(10.5)
-    p_g2_d.font.color.rgb = TEXT_BODY
+    p_g2_d.font.color.rgb = theme["text_body"]
     p_g2_d.space_after = Pt(10)
 
     p_safety = tf2.add_paragraph()
     p_safety.text = "Outcome: Trivial problems stop after 2 paths. Ambiguous problems get the full 6 paths. Nothing is wasted."
     p_safety.font.size = Pt(10.5)
     p_safety.font.bold = True
-    p_safety.font.color.rgb = BLUE_DARK
+    p_safety.font.color.rgb = theme["secondary_accent"]
 
     # =========================================================================
     # SLIDE 7: MATHEMATICAL FORMULATION (Humanized, Readable)
     # =========================================================================
     s7 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s7, BG_PAGE)
+    set_slide_background(s7)
     add_slide_header(s7, "Mathematical Formulation", "Clear Mathematical Rules Behind the Stopping Policy", 7)
 
     # Left: The Rules
-    c1 = create_card(s7, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
+    c1 = create_card(s7, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["secondary_accent"])
     tf = c1.text_frame
     p = tf.paragraphs[0]
     p.text = "The Mathematical Definitions"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = BLUE_DARK
+    p.font.color.rgb = theme["secondary_accent"]
     p.space_after = Pt(8)
 
     formulas7 = [
@@ -651,28 +789,28 @@ def build_faculty_deck():
         p.text = title
         p.font.size = Pt(11)
         p.font.bold = True
-        p.font.color.rgb = TEXT_HEAD
+        p.font.color.rgb = theme["text_head"]
         r = tf.add_paragraph()
         r.text = desc
         r.font.size = Pt(10)
-        r.font.color.rgb = BLUE_DARK
+        r.font.color.rgb = theme["secondary_accent"]
         r.space_after = Pt(6)
 
     # Right: Why This Rule Works
-    c2 = create_card(s7, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
+    c2 = create_card(s7, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["primary_accent"])
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
     p.text = "Why This Prevents Mistakes: Theoretical Guarantee"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_HEAD
+    p.font.color.rgb = theme["text_head"]
     p.space_after = Pt(8)
 
     p_bound = tf2.add_paragraph()
     p_bound.text = "Theoretical Risk Bound:\nProbability of Early Stop Error <= exp( - Margin^2 / (2 * Paths) ) * (1 - Confidence)"
     p_bound.font.size = Pt(10.5)
     p_bound.font.bold = True
-    p_bound.font.color.rgb = RED_ACCENT
+    p_bound.font.color.rgb = theme["danger_accent"]
     p_bound.space_after = Pt(10)
 
     bullets7_right = [
@@ -681,44 +819,35 @@ def build_faculty_deck():
         ("Instant Decision Time: ", "Evaluating these two rules takes less than 0.05 milliseconds on a CPU — adding virtually zero overhead to the model's generation.")
     ]
     for b_title, b_desc in bullets7_right:
-        p = tf2.add_paragraph()
-        p.text = "• " + b_title
-        p.font.size = Pt(10.5)
-        p.font.bold = True
-        p.font.color.rgb = TEXT_HEAD
-        r = p.add_run()
-        r.text = b_desc
-        r.font.bold = False
-        r.font.color.rgb = TEXT_BODY
-        p.space_after = Pt(6)
+        add_bullet_point(tf2, b_title, b_desc, bullet_color=theme["primary_accent"], space_after=Pt(8))
 
     # =========================================================================
     # SLIDE 8: SYSTEM ARCHITECTURE & ENGINEERING
     # =========================================================================
     s8 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s8, BG_PAGE)
+    set_slide_background(s8)
     add_slide_header(s8, "Implementation Architecture", "What We Built: Core Codebase Modules", 8)
 
     modules8 = [
-        ("client_wrapper.py", "Asynchronous LLM Client", BLUE_ACCENT, [
-            "Manages API connections with ThreadPoolExecutor (2 workers) to respect free-tier token limits.",
-            "Automatic Rate-Limit Backoff: If an HTTP 429 response is received, it pauses for 15 seconds to let the token bucket refill.",
-            "Captures both the text rationale and token log-probabilities to compute path weights."
+        ("client_wrapper.py", "Asynchronous LLM Client", theme["primary_accent"], [
+            ("Thread Pool: ", "Manages API connections with ThreadPoolExecutor (2 workers) to respect free-tier token limits."),
+            ("Rate-Limit Backoff: ", "If an HTTP 429 response is received, it pauses for 15 seconds to let the token bucket refill."),
+            ("Logprob Capture: ", "Captures both the text rationale and token log-probabilities to compute path weights.")
         ]),
-        ("extractor.py", "Robust Answer Parser", PURPLE_ACCENT, [
-            "6-stage regex parser that handles messy LLM formatting (LaTeX, Markdown, units).",
-            "Cleans currencies ($/₹/€), commas (1,250 -> 1250), percentages, and trailing punctuation.",
-            "Passes 11/11 unit tests and achieves 100% extraction recovery on all test problems."
+        ("extractor.py", "Robust Answer Parser", theme["secondary_accent"], [
+            ("6-Stage Cascade: ", "Regex parser that handles messy LLM formatting (LaTeX, Markdown, units)."),
+            ("Cleans Currencies: ", "Normalizes currencies ($/₹/€), commas (1,250 -> 1250), percentages, and punctuation."),
+            ("100% Recovery: ", "Passes 11/11 unit tests and achieves 100% extraction recovery on all benchmark problems.")
         ]),
-        ("ca_asc_evaluator.py", "Adaptive Replay Simulator", GREEN_ACCENT, [
-            "Implements the dual-condition early stopping engine (margin + confidence share).",
-            "High-Throughput Offline Replay: Re-runs policy sweeps over cached traces in 0.05 seconds.",
-            "Allows testing different thresholds without spending API credits or making repetitive calls."
+        ("ca_asc_evaluator.py", "Adaptive Replay Simulator", theme["success_accent"], [
+            ("Dual-Gate Engine: ", "Implements the early stopping engine (margin + confidence share)."),
+            ("Offline Replay: ", "Re-runs policy sweeps over cached traces in 0.05 seconds locally."),
+            ("Zero Cost Sweeps: ", "Allows testing different thresholds without spending API credits or making repetitive calls.")
         ])
     ]
     for i, (mod_file, mod_name, mod_col, mod_bullets) in enumerate(modules8):
         x = Inches(0.8 + i * 4.0)
-        card = create_card(s8, x, Inches(1.48), Inches(3.733), Inches(5.12))
+        card = create_card(s8, x, Inches(1.48), Inches(3.733), Inches(5.12), accent_color=mod_col)
         tf = card.text_frame
         p = tf.paragraphs[0]
         p.text = mod_file
@@ -731,31 +860,27 @@ def build_faculty_deck():
         p_sub.text = mod_name
         p_sub.font.size = Pt(10.5)
         p_sub.font.bold = True
-        p_sub.font.color.rgb = TEXT_HEAD
+        p_sub.font.color.rgb = theme["text_head"]
         p_sub.space_after = Pt(10)
 
-        for b in mod_bullets:
-            pb = tf.add_paragraph()
-            pb.text = "• " + b
-            pb.font.size = Pt(10.5)
-            pb.font.color.rgb = TEXT_BODY
-            pb.space_after = Pt(8)
+        for b_title, b_desc in mod_bullets:
+            add_bullet_point(tf, b_title, b_desc, bullet_color=mod_col, space_after=Pt(8))
 
     # =========================================================================
     # SLIDE 9: EXPERIMENTAL SETUP
     # =========================================================================
     s9 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s9, BG_PAGE)
+    set_slide_background(s9)
     add_slide_header(s9, "Experimental Setup", "Benchmark Dataset, Model Backbone & Comparison Baselines", 9)
 
     # Left: Parameter Table
-    c1 = create_card(s9, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
+    c1 = create_card(s9, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["primary_accent"])
     tf = c1.text_frame
     p = tf.paragraphs[0]
     p.text = "Experimental Configuration"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_HEAD
+    p.font.color.rgb = theme["text_head"]
     p.space_after = Pt(6)
 
     rows, cols = 8, 2
@@ -775,28 +900,34 @@ def build_faculty_deck():
         ("Stopping Parameters", "Margin lead = 2, Confidence = 70%, Max budget = 6")
     ]
     for r_idx, (p_name, p_val) in enumerate(params9):
+        row_fill = theme["table_row_alt"] if r_idx % 2 == 1 else theme["card_bg"]
         c0 = t.cell(r_idx, 0)
         c0.text = p_name
         c0.margin_top = c0.margin_bottom = Inches(0.04)
         c0.margin_left = c0.margin_right = Inches(0.06)
+        c0.fill.solid()
+        c0.fill.fore_color.rgb = row_fill
         c0.text_frame.paragraphs[0].font.bold = True
         c0.text_frame.paragraphs[0].font.size = Pt(9.5)
-        c0.text_frame.paragraphs[0].font.color.rgb = TEXT_HEAD
+        c0.text_frame.paragraphs[0].font.color.rgb = theme["text_head"]
+
         c1_cell = t.cell(r_idx, 1)
         c1_cell.text = p_val
         c1_cell.margin_top = c1_cell.margin_bottom = Inches(0.04)
         c1_cell.margin_left = c1_cell.margin_right = Inches(0.06)
+        c1_cell.fill.solid()
+        c1_cell.fill.fore_color.rgb = row_fill
         c1_cell.text_frame.paragraphs[0].font.size = Pt(9.5)
-        c1_cell.text_frame.paragraphs[0].font.color.rgb = BLUE_DARK if r_idx >= 6 else TEXT_BODY
+        c1_cell.text_frame.paragraphs[0].font.color.rgb = theme["secondary_accent"] if r_idx >= 6 else theme["text_body"]
 
     # Right: Baselines
-    c2 = create_card(s9, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
+    c2 = create_card(s9, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["secondary_accent"])
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
     p.text = "Strategies Evaluated for Comparison"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_HEAD
+    p.font.color.rgb = theme["text_head"]
     p.space_after = Pt(8)
 
     baselines9 = [
@@ -806,112 +937,94 @@ def build_faculty_deck():
         ("4. Adaptive Self-Consistency (Ours): ", "Samples paths in pairs of 2. Stops as soon as the lead answer has a 2-vote margin and >= 70% confidence.")
     ]
     for b_title, b_desc in baselines9:
-        p = tf2.add_paragraph()
-        p.text = b_title
-        p.font.size = Pt(11)
-        p.font.bold = True
-        p.font.color.rgb = BLUE_ACCENT if "Adaptive" in b_title else TEXT_HEAD
-        r = p.add_run()
-        r.text = b_desc
-        r.font.bold = False
-        r.font.color.rgb = TEXT_BODY
-        p.space_after = Pt(6)
+        add_bullet_point(tf2, b_title, b_desc, bullet_color=theme["primary_accent"] if "Adaptive" in b_title else theme["secondary_accent"], space_after=Pt(8))
 
     # =========================================================================
     # SLIDE 10: ANSWER EXTRACTION & ERROR MITIGATION
     # =========================================================================
     s10 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s10, BG_PAGE)
+    set_slide_background(s10)
     add_slide_header(s10, "Robust Parsing", "Answer Extraction: Handling Inconsistent LLM Outputs", 10)
 
     # Left: Real Formatting Difficulties
-    c1 = create_card(s10, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
+    c1 = create_card(s10, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["danger_accent"])
     tf = c1.text_frame
     p = tf.paragraphs[0]
     p.text = "Real-World Output Variations from LLMs"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = RED_ACCENT
+    p.font.color.rgb = theme["danger_accent"]
     p.space_after = Pt(8)
 
     cases10 = [
-        ("LaTeX Boxed Notation: ", "Model writes \\boxed{1,250.00} instead of just 1250. Parser strips brackets and removes commas."),
+        ("LaTeX Boxed Notation: ", "Model writes [boxed: 1,250.00] instead of just 1250. Parser strips brackets and removes commas."),
         ("Markdown Bold Embeddings: ", "Model outputs 'The cost is **$104** in total'. Parser extracts 104 and ignores the dollar sign and asterisks."),
         ("Verbal Concluding Sentences: ", "Model concludes with 'Total: 104 dollars'. Parser identifies concluding phrases and extracts the number."),
         ("Trailing Period Noise: ", "Model outputs 'The answer is 18.' Parser removes the period while preserving negative numbers like -4.5."),
         ("Last Numeral Fallback: ", "If the model doesn't use standard tags, the parser safely pulls the final computed number from the end of the rationale.")
     ]
     for c_title, c_desc in cases10:
-        p = tf.add_paragraph()
-        p.text = "• " + c_title
-        p.font.size = Pt(11)
-        p.font.bold = True
-        p.font.color.rgb = TEXT_HEAD
-        r = p.add_run()
-        r.text = c_desc
-        r.font.bold = False
-        r.font.color.rgb = TEXT_BODY
-        p.space_after = Pt(6)
+        add_bullet_point(tf, c_title, c_desc, bullet_color=theme["danger_accent"], space_after=Pt(7))
 
     # Right: The 6-Stage Priority Cascade
-    c2 = create_card(s10, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
+    c2 = create_card(s10, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["success_accent"])
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
     p.text = "The 6-Stage Priority Cascade in extractor.py"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = GREEN_ACCENT
+    p.font.color.rgb = theme["success_accent"]
     p.space_after = Pt(8)
 
     stages10 = [
-        "Priority 1: GSM8K Tag Format  (#### <num>)",
-        "Priority 2: LaTeX Box Pattern  (\\boxed{<num>})",
-        "Priority 3: Verbal Phrases  (the answer is <num>)",
-        "Priority 4: Markdown Bold  (**<num>** or **$<num>**)",
-        "Priority 5: Concluding Stmts  (total is <num> dollars)",
-        "Priority 6: Final Numeral Fallback  (last valid number)"
+        ("Priority 1: ", "GSM8K Tag Format  (#### <num>)"),
+        ("Priority 2: ", "LaTeX Box Pattern  (boxed{<num>})"),
+        ("Priority 3: ", "Verbal Phrases  (the answer is <num>)"),
+        ("Priority 4: ", "Markdown Bold  (**<num>** or **$<num>**)"),
+        ("Priority 5: ", "Concluding Stmts  (total is <num> dollars)"),
+        ("Priority 6: ", "Final Numeral Fallback  (last valid number)")
     ]
-    for s in stages10:
-        p = tf2.add_paragraph()
-        p.text = s
-        p.font.size = Pt(10.5)
-        p.font.bold = True
-        p.font.color.rgb = BLUE_DARK
-        p.space_after = Pt(5)
+    for s_prio, s_desc in stages10:
+        add_bullet_point(tf2, s_prio, s_desc, bullet_color=theme["success_accent"], space_after=Pt(5))
 
     p_perf = tf2.add_paragraph()
     p_perf.text = "\nVerification Result:\n• 11 / 11 automated unit test suites pass.\n• Achieves 100% extraction recovery across all 180 paths in the benchmark, eliminating false scoring penalties."
     p_perf.font.size = Pt(10.5)
     p_perf.font.bold = True
-    p_perf.font.color.rgb = GREEN_ACCENT
+    p_perf.font.color.rgb = theme["success_accent"]
 
     # =========================================================================
     # SLIDE 11: REPLICATION & ADAPTIVE SC (Figure 1 Embedded)
     # =========================================================================
     s11 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s11, BG_PAGE)
+    set_slide_background(s11)
     add_slide_header(s11, "Empirical Results", "Replication of Wang et al. vs. Our Adaptive Self-Consistency", 11)
 
     # Left: Embed Real Project Figure 1
     fig1_path = "results/fig1_wang_vs_adaptive_scaling.png"
-    add_card_shape = create_card(s11, Inches(0.8), Inches(1.48), Inches(7.1), Inches(5.12))
+    create_card(s11, Inches(0.8), Inches(1.48), Inches(7.1), Inches(5.12), accent_color=theme["primary_accent"])
     if os.path.exists(fig1_path):
         s11.shapes.add_picture(fig1_path, Inches(0.95), Inches(1.65), Inches(6.8), Inches(4.30))
-        cap_box = s11.shapes.add_textbox(Inches(0.95), Inches(6.05), Inches(6.8), Inches(0.40))
+        cap_box = s11.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.95), Inches(6.05), Inches(6.8), Inches(0.40))
+        cap_box.fill.solid()
+        cap_box.fill.fore_color.rgb = theme["badge_bg"]
+        cap_box.line.color.rgb = theme["badge_border"]
+        cap_box.line.width = Pt(1)
         p = cap_box.text_frame.paragraphs[0]
         p.text = "Figure 1: GSM8K empirical accuracy scaling: Wang et al. (fixed N=1..6) vs. Adaptive SC (Ours)."
         p.font.size = Pt(9.5)
-        p.font.color.rgb = TEXT_MUTED
+        p.font.bold = True
+        p.font.color.rgb = theme["badge_text"]
         p.alignment = PP_ALIGN.CENTER
 
     # Right: Analytical Side-Panel
-    c11 = create_card(s11, Inches(8.1), Inches(1.48), Inches(4.433), Inches(5.12))
+    c11 = create_card(s11, Inches(8.1), Inches(1.48), Inches(4.433), Inches(5.12), accent_color=theme["secondary_accent"])
     tf = c11.text_frame
     p = tf.paragraphs[0]
     p.text = "What This Graph Proves"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_HEAD
+    p.font.color.rgb = theme["text_head"]
     p.space_after = Pt(8)
 
     insights11 = [
@@ -923,52 +1036,59 @@ def build_faculty_deck():
         ("Why It Wins: ", "Stops early when confident, avoiding both unnecessary compute and tail rationale noise.")
     ]
     for i_title, i_desc in insights11:
-        p = tf.add_paragraph()
-        p.text = "• " + i_title
-        p.font.size = Pt(10.5)
-        p.font.bold = True
-        p.font.color.rgb = BLUE_ACCENT if "Adaptive" in i_title else TEXT_HEAD
-        r = p.add_run()
-        r.text = i_desc
-        r.font.bold = False
-        r.font.color.rgb = TEXT_BODY
-        p.space_after = Pt(5)
+        add_bullet_point(tf, i_title, i_desc, bullet_color=theme["primary_accent"] if "Adaptive" in i_title else theme["secondary_accent"], space_after=Pt(6))
 
     # =========================================================================
     # SLIDE 12: PARETO FRONTIER & 48.4% COMPUTE REDUCTION (Figure 2 Embedded)
     # =========================================================================
     s12 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s12, BG_PAGE)
+    set_slide_background(s12)
     add_slide_header(s12, "Compute Efficiency", "Compute Efficiency: 48.4% Token Reduction on the Pareto Frontier", 12)
 
     # Left: Embed Real Project Figure 2
     fig2_path = "results/fig2_pareto_compute.png"
-    create_card(s12, Inches(0.8), Inches(1.48), Inches(7.1), Inches(5.12))
+    create_card(s12, Inches(0.8), Inches(1.48), Inches(7.1), Inches(5.12), accent_color=theme["success_accent"])
     if os.path.exists(fig2_path):
         s12.shapes.add_picture(fig2_path, Inches(0.95), Inches(1.65), Inches(6.8), Inches(4.30))
-        cap_box = s12.shapes.add_textbox(Inches(0.95), Inches(6.05), Inches(6.8), Inches(0.40))
+        cap_box = s12.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.95), Inches(6.05), Inches(6.8), Inches(0.40))
+        cap_box.fill.solid()
+        cap_box.fill.fore_color.rgb = theme["badge_bg"]
+        cap_box.line.color.rgb = theme["badge_border"]
+        cap_box.line.width = Pt(1)
         p = cap_box.text_frame.paragraphs[0]
         p.text = "Figure 2: Empirical Pareto frontier on GSM8K: Completion Tokens vs. Benchmark Accuracy (%)."
         p.font.size = Pt(9.5)
-        p.font.color.rgb = TEXT_MUTED
+        p.font.bold = True
+        p.font.color.rgb = theme["badge_text"]
         p.alignment = PP_ALIGN.CENTER
 
     # Right: Analytical Side-Panel
-    c12 = create_card(s12, Inches(8.1), Inches(1.48), Inches(4.433), Inches(5.12))
+    c12 = create_card(s12, Inches(8.1), Inches(1.48), Inches(4.433), Inches(5.12), accent_color=theme["primary_accent"])
     tf = c12.text_frame
     p = tf.paragraphs[0]
     p.text = "Token Savings Breakdown"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = BLUE_DARK
+    p.font.color.rgb = theme["secondary_accent"]
     p.space_after = Pt(6)
 
-    p_box = tf.add_paragraph()
-    p_box.text = "-48.4% TOKENS SAVED"
-    p_box.font.size = Pt(20)
-    p_box.font.bold = True
-    p_box.font.color.rgb = GREEN_ACCENT
-    p_box.space_after = Pt(6)
+    # Big KPI Stat Pill
+    stat_pill = s12.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(8.3), Inches(2.05), Inches(4.033), Inches(0.55))
+    stat_pill.fill.solid()
+    stat_pill.fill.fore_color.rgb = theme["card_highlight_bg"]
+    stat_pill.line.color.rgb = theme["card_highlight_border"]
+    stat_pill.line.width = Pt(1.5)
+    tf_sp = stat_pill.text_frame
+    tf_sp.vertical_anchor = MSO_ANCHOR.MIDDLE
+    p_sp = tf_sp.paragraphs[0]
+    p_sp.text = "-48.4% TOKENS SAVED"
+    p_sp.font.size = Pt(18)
+    p_sp.font.bold = True
+    p_sp.font.color.rgb = theme["primary_accent"]
+    p_sp.alignment = PP_ALIGN.CENTER
+
+    # Empty spacer in text frame for pill
+    tf.add_paragraph().space_after = Pt(36)
 
     comp_items12 = [
         ("Standard SC (N=6): ", "Consumes 1,123 tokens per question on average."),
@@ -979,50 +1099,46 @@ def build_faculty_deck():
         ("Real Latency Benefit: ", "Halves waiting time for user answers during interactive sessions.")
     ]
     for c_title, c_desc in comp_items12:
-        p = tf.add_paragraph()
-        p.text = "• " + c_title
-        p.font.size = Pt(10.5)
-        p.font.bold = True
-        p.font.color.rgb = TEXT_HEAD
-        r = p.add_run()
-        r.text = c_desc
-        r.font.bold = False
-        r.font.color.rgb = TEXT_BODY
-        p.space_after = Pt(5)
+        add_bullet_point(tf, c_title, c_desc, bullet_color=theme["primary_accent"], space_after=Pt(5))
 
     # =========================================================================
     # SLIDE 13: SAMPLE ALLOCATION HISTOGRAM (Figure 3 Embedded)
     # =========================================================================
     s13 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s13, BG_PAGE)
+    set_slide_background(s13)
     add_slide_header(s13, "Dynamic Allocation", "Sample Allocation: How the System Adapts to Problem Difficulty", 13)
 
     # Left: Embed Real Project Figure 3
     fig3_path = "results/figure_2_sample_allocation.png"
-    create_card(s13, Inches(0.8), Inches(1.48), Inches(7.1), Inches(5.12))
+    create_card(s13, Inches(0.8), Inches(1.48), Inches(7.1), Inches(5.12), accent_color=theme["secondary_accent"])
     if os.path.exists(fig3_path):
         s13.shapes.add_picture(fig3_path, Inches(0.95), Inches(1.65), Inches(6.8), Inches(4.30))
-        cap_box = s13.shapes.add_textbox(Inches(0.95), Inches(6.05), Inches(6.8), Inches(0.40))
+        cap_box = s13.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.95), Inches(6.05), Inches(6.8), Inches(0.40))
+        cap_box.fill.solid()
+        cap_box.fill.fore_color.rgb = theme["badge_bg"]
+        cap_box.line.color.rgb = theme["badge_border"]
+        cap_box.line.width = Pt(1)
         p = cap_box.text_frame.paragraphs[0]
         p.text = "Figure 3: Number of reasoning paths evaluated before termination across 30 GSM8K test questions."
         p.font.size = Pt(9.5)
-        p.font.color.rgb = TEXT_MUTED
+        p.font.bold = True
+        p.font.color.rgb = theme["badge_text"]
         p.alignment = PP_ALIGN.CENTER
 
     # Right: Analytical Side-Panel
-    c13 = create_card(s13, Inches(8.1), Inches(1.48), Inches(4.433), Inches(5.12))
+    c13 = create_card(s13, Inches(8.1), Inches(1.48), Inches(4.433), Inches(5.12), accent_color=theme["primary_accent"])
     tf = c13.text_frame
     p = tf.paragraphs[0]
     p.text = "Difficulty Tier Breakdown"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_HEAD
+    p.font.color.rgb = theme["text_head"]
     p.space_after = Pt(6)
 
     tiers13 = [
-        ("Easy Tier (k = 2 paths): ", "20 Questions (66.7%)", GREEN_ACCENT, "Two-thirds of all questions reach clear agreement on the first pair. Stopping here saves 66.7% of maximum compute."),
-        ("Medium Tier (k = 4 paths): ", "4 Questions (13.3%)", AMBER_ACCENT, "First batch split 1-vs-1. The second batch broke the tie and established consensus."),
-        ("Complex Tier (k = 6 paths): ", "6 Questions (20.0%)", RED_ACCENT, "Challenging multi-constraint problems that genuinely required full exploration budget.")
+        ("Easy Tier (k = 2 paths): ", "20 Questions (66.7%)", theme["success_accent"], "Two-thirds of all questions reach clear agreement on the first pair. Stopping here saves 66.7% of maximum compute."),
+        ("Medium Tier (k = 4 paths): ", "4 Questions (13.3%)", theme["warning_accent"], "First batch split 1-vs-1. The second batch broke the tie and established consensus."),
+        ("Complex Tier (k = 6 paths): ", "6 Questions (20.0%)", theme["danger_accent"], "Challenging multi-constraint problems that genuinely required full exploration budget.")
     ]
     for t_name, t_stat, t_col, t_desc in tiers13:
         p = tf.add_paragraph()
@@ -1033,30 +1149,30 @@ def build_faculty_deck():
         r = tf.add_paragraph()
         r.text = t_desc
         r.font.size = Pt(10)
-        r.font.color.rgb = TEXT_BODY
+        r.font.color.rgb = theme["text_body"]
         r.space_after = Pt(6)
 
     p_avg = tf.add_paragraph()
     p_avg.text = "Overall Average Budget Used: 3.1 paths per question\n(Compared to 6.0 paths required by standard Self-Consistency)"
     p_avg.font.size = Pt(11)
     p_avg.font.bold = True
-    p_avg.font.color.rgb = BLUE_DARK
+    p_avg.font.color.rgb = theme["secondary_accent"]
 
     # =========================================================================
     # SLIDE 14: ABLATION STUDIES (Validating Stopping Rules)
     # =========================================================================
     s14 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s14, BG_PAGE)
+    set_slide_background(s14)
     add_slide_header(s14, "Ablation Analysis", "Ablation Study: Validating the Stopping Thresholds", 14)
 
     # Left: Grid Sweep Table
-    c1 = create_card(s14, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
+    c1 = create_card(s14, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["primary_accent"])
     tf = c1.text_frame
     p = tf.paragraphs[0]
     p.text = "Offline Parameter Sweep (ablation_study.py)"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = TEXT_HEAD
+    p.font.color.rgb = theme["text_head"]
     p.space_after = Pt(6)
 
     rows, cols = 6, 6
@@ -1076,12 +1192,12 @@ def build_faculty_deck():
         cell.margin_top = cell.margin_bottom = Inches(0.04)
         cell.margin_left = cell.margin_right = Inches(0.06)
         cell.fill.solid()
-        cell.fill.fore_color.rgb = RGBColor(241, 245, 249)
+        cell.fill.fore_color.rgb = theme["table_header_bg"]
         p = cell.text_frame.paragraphs[0]
         p.font.name = FONT_FAMILY
         p.font.size = Pt(9.5)
         p.font.bold = True
-        p.font.color.rgb = TEXT_HEAD
+        p.font.color.rgb = theme["table_header_text"]
 
     abl_data = [
         ("b=1", "Margin=1", "70%", "56.7%", "+56.1%", "10.0%"),
@@ -1091,33 +1207,36 @@ def build_faculty_deck():
         ("b=2", "Margin=3", "70%", "70.0%", "+5.2%",  "0.0%")
     ]
     for r_idx, row_data in enumerate(abl_data):
+        row_fill = theme["table_row_alt"] if r_idx % 2 == 1 else theme["card_bg"]
         for c_idx, val in enumerate(row_data):
             cell = t.cell(r_idx + 1, c_idx)
             cell.text = val
             cell.margin_top = cell.margin_bottom = Inches(0.04)
             cell.margin_left = cell.margin_right = Inches(0.06)
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = row_fill
             p = cell.text_frame.paragraphs[0]
             p.font.name = FONT_FAMILY
             p.font.size = Pt(9.5)
             if r_idx == 3:  # Our optimal setting
                 cell.fill.solid()
-                cell.fill.fore_color.rgb = BLUE_TINT
+                cell.fill.fore_color.rgb = theme["card_highlight_bg"]
                 p.font.bold = True
-                p.font.color.rgb = BLUE_DARK
+                p.font.color.rgb = theme["secondary_accent"]
             elif c_idx == 5 and "10.0%" in val:
                 p.font.bold = True
-                p.font.color.rgb = RED_ACCENT
+                p.font.color.rgb = theme["danger_accent"]
             else:
-                p.font.color.rgb = TEXT_HEAD
+                p.font.color.rgb = theme["text_head"]
 
     # Right: Trade-Off Insights
-    c2 = create_card(s14, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
+    c2 = create_card(s14, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["secondary_accent"])
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
     p.text = "What This Teaches Us About Stopping Policies"
     p.font.size = Pt(13.5)
     p.font.bold = True
-    p.font.color.rgb = BLUE_DARK
+    p.font.color.rgb = theme["secondary_accent"]
     p.space_after = Pt(8)
 
     insights14 = [
@@ -1127,32 +1246,23 @@ def build_faculty_deck():
         ("Role of Confidence Check (>= 70%): ", "Acts as an essential safety net: even if 2 paths agree, if token perplexity is high, early exit is delayed until confirmation.")
     ]
     for i_title, i_desc in insights14:
-        p = tf2.add_paragraph()
-        p.text = "• " + i_title
-        p.font.size = Pt(10.5)
-        p.font.bold = True
-        p.font.color.rgb = TEXT_HEAD
-        r = p.add_run()
-        r.text = i_desc
-        r.font.bold = False
-        r.font.color.rgb = TEXT_BODY
-        p.space_after = Pt(6)
+        add_bullet_point(tf2, i_title, i_desc, bullet_color=theme["secondary_accent"], space_after=Pt(8))
 
     # =========================================================================
     # SLIDE 15: MILESTONES & FINAL-TERM ROADMAP
     # =========================================================================
     s15 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s15, BG_PAGE)
+    set_slide_background(s15)
     add_slide_header(s15, "Project Roadmap", "Mid-Term Milestones Completed & Final-Term Roadmap", 15)
 
     # Left: Completed Mid-Term
-    c1 = create_card(s15, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12))
+    c1 = create_card(s15, Inches(0.8), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["success_accent"])
     tf = c1.text_frame
     p = tf.paragraphs[0]
     p.text = "✓ Completed Mid-Term Deliverables (100% On-Schedule)"
     p.font.size = Pt(13)
     p.font.bold = True
-    p.font.color.rgb = GREEN_ACCENT
+    p.font.color.rgb = theme["success_accent"]
     p.space_after = Pt(8)
 
     done_items = [
@@ -1163,25 +1273,16 @@ def build_faculty_deck():
         ("High-Speed Replay Engine: ", "Enabled local simulation sweeps across stopping thresholds in under 0.05 seconds.")
     ]
     for d_title, d_desc in done_items:
-        p = tf.add_paragraph()
-        p.text = "• " + d_title
-        p.font.size = Pt(10.5)
-        p.font.bold = True
-        p.font.color.rgb = TEXT_HEAD
-        r = p.add_run()
-        r.text = d_desc
-        r.font.bold = False
-        r.font.color.rgb = TEXT_BODY
-        p.space_after = Pt(6)
+        add_bullet_point(tf, d_title, d_desc, bullet_color=theme["success_accent"], space_after=Pt(8))
 
     # Right: Future Work Roadmap
-    c2 = create_card(s15, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12))
+    c2 = create_card(s15, Inches(6.833), Inches(1.48), Inches(5.7), Inches(5.12), accent_color=theme["primary_accent"])
     tf2 = c2.text_frame
     p = tf2.paragraphs[0]
     p.text = "➔ Final-Term Roadmap (Nov 2026 - May 2027)"
     p.font.size = Pt(13)
     p.font.bold = True
-    p.font.color.rgb = BLUE_ACCENT
+    p.font.color.rgb = theme["primary_accent"]
     p.space_after = Pt(8)
 
     future_items = [
@@ -1191,46 +1292,43 @@ def build_faculty_deck():
         ("Conference Submission: ", "Prepare and submit a complete research paper to an ACL / EMNLP / NeurIPS peer-reviewed workshop.")
     ]
     for f_title, f_desc in future_items:
-        p = tf2.add_paragraph()
-        p.text = "• " + f_title
-        p.font.size = Pt(10.5)
-        p.font.bold = True
-        p.font.color.rgb = TEXT_HEAD
-        r = p.add_run()
-        r.text = f_desc
-        r.font.bold = False
-        r.font.color.rgb = TEXT_BODY
-        p.space_after = Pt(6)
+        add_bullet_point(tf2, f_title, f_desc, bullet_color=theme["primary_accent"], space_after=Pt(8))
 
     # =========================================================================
-    # SLIDE 16: CONCLUSION & FACULTY Q&A (Cohesive Light Theme)
+    # SLIDE 16: CONCLUSION & FACULTY Q&A (Unified Theme)
     # =========================================================================
     s16 = prs.slides.add_slide(blank_layout)
-    set_slide_background(s16, BG_PAGE)
+    set_slide_background(s16)
 
     # Top Tag
-    pill = create_card(s16, Inches(0.8), Inches(0.60), Inches(3.6), Inches(0.35), fill_color=CARD_BG, border_color=CARD_BORDER_BLUE)
-    p = pill.text_frame.paragraphs[0]
-    p.text = "MID-TERM EVALUATION SUMMARY"
+    pill16 = s16.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(0.48), Inches(4.5), Inches(0.35))
+    pill16.fill.solid()
+    pill16.fill.fore_color.rgb = theme["badge_bg"]
+    pill16.line.color.rgb = theme["badge_border"]
+    pill16.line.width = Pt(1)
+    tf16 = pill16.text_frame
+    tf16.vertical_anchor = MSO_ANCHOR.MIDDLE
+    p = tf16.paragraphs[0]
+    p.text = "●  MID-TERM EVALUATION CONCLUSION & KEY FINDINGS"
     p.font.size = Pt(9.5)
     p.font.bold = True
-    p.font.color.rgb = BLUE_ACCENT
+    p.font.color.rgb = theme["badge_text"]
     p.alignment = PP_ALIGN.CENTER
 
     # Main Title
-    t_box = s16.shapes.add_textbox(Inches(0.8), Inches(1.05), Inches(11.733), Inches(1.2))
+    t_box = s16.shapes.add_textbox(Inches(0.8), Inches(0.95), Inches(11.733), Inches(1.2))
     tf = t_box.text_frame
     tf.word_wrap = True
     p1 = tf.paragraphs[0]
-    p1.text = "Key Takeaways & Conclusion"
+    p1.text = "Key Takeaways & Faculty Discussion"
     p1.font.size = Pt(28)
     p1.font.bold = True
-    p1.font.color.rgb = TEXT_HEAD
+    p1.font.color.rgb = theme["text_head"]
     p1.space_after = Pt(4)
     p2 = tf.add_paragraph()
     p2.text = "Confidence-Aware Adaptive Self-Consistency transforms reasoning inference from brute-force sampling into dynamic, consensus-guided intelligence."
-    p2.font.size = Pt(14)
-    p2.font.color.rgb = BLUE_DARK
+    p2.font.size = Pt(13.5)
+    p2.font.color.rgb = theme["secondary_accent"]
 
     # 3 Summary Cards
     stat_summary16 = [
@@ -1240,75 +1338,79 @@ def build_faculty_deck():
     ]
     for i, (num, lbl, desc) in enumerate(stat_summary16):
         x = Inches(0.8 + i * 4.0)
-        card = create_card(s16, x, Inches(2.35), Inches(3.733), Inches(2.10), fill_color=CARD_BG, border_color=CARD_BORDER)
+        card = create_card(s16, x, Inches(2.28), Inches(3.733), Inches(2.15), fill_color=theme["card_highlight_bg"], border_color=theme["card_highlight_border"], accent_color=theme["primary_accent"])
         tf = card.text_frame
         p_num = tf.paragraphs[0]
         p_num.text = num
         p_num.font.size = Pt(26)
         p_num.font.bold = True
-        p_num.font.color.rgb = BLUE_ACCENT
+        p_num.font.color.rgb = theme["primary_accent"]
         p_lbl = tf.add_paragraph()
         p_lbl.text = lbl
         p_lbl.font.size = Pt(10.5)
         p_lbl.font.bold = True
-        p_lbl.font.color.rgb = TEXT_HEAD
+        p_lbl.font.color.rgb = theme["text_head"]
         p_lbl.space_after = Pt(4)
         p_desc = tf.add_paragraph()
         p_desc.text = desc
         p_desc.font.size = Pt(10.5)
-        p_desc.font.color.rgb = TEXT_BODY
+        p_desc.font.color.rgb = theme["text_body"]
 
     # Supervisor & Team Acknowledgment Card
-    ack_card = create_card(s16, Inches(0.8), Inches(4.65), Inches(11.733), Inches(1.95), fill_color=CARD_BG, border_color=CARD_BORDER)
+    ack_card = create_card(s16, Inches(0.8), Inches(4.65), Inches(11.733), Inches(1.95), accent_color=theme["primary_accent"])
     tf = ack_card.text_frame
-    
+
     p = tf.paragraphs[0]
     p.text = "PROJECT SUPERVISOR"
     p.font.size = Pt(10.5)
     p.font.bold = True
-    p.font.color.rgb = BLUE_ACCENT
+    p.font.color.rgb = theme["primary_accent"]
     p.space_after = Pt(2)
 
     p_sup = tf.add_paragraph()
     p_sup.text = "Dr. Bharat Singh  —  Assistant Professor, Department of CSE, IIIT Ranchi"
     p_sup.font.size = Pt(13)
     p_sup.font.bold = True
-    p_sup.font.color.rgb = TEXT_HEAD
+    p_sup.font.color.rgb = theme["text_head"]
     p_sup.space_after = Pt(8)
 
     p_team_hdr = tf.add_paragraph()
     p_team_hdr.text = "STUDENT INVESTIGATORS"
     p_team_hdr.font.size = Pt(10.5)
     p_team_hdr.font.bold = True
-    p_team_hdr.font.color.rgb = BLUE_ACCENT
+    p_team_hdr.font.color.rgb = theme["primary_accent"]
     p_team_hdr.space_after = Pt(2)
 
     p_team = tf.add_paragraph()
     p_team.text = "Pankaj Jangid (2023UG3004)  |  Aagman (2023UG3027)  |  Abhinav Kumar (2023UG4018)"
     p_team.font.size = Pt(12)
     p_team.font.bold = True
-    p_team.font.color.rgb = TEXT_HEAD
+    p_team.font.color.rgb = theme["text_head"]
     p_team.space_after = Pt(4)
 
     p_thanks = tf.add_paragraph()
     p_thanks.text = "Department of Computer Science & Engineering, IIIT Ranchi  •  Thank You! Questions & Faculty Discussion."
     p_thanks.font.size = Pt(11)
     p_thanks.font.bold = True
-    p_thanks.font.color.rgb = BLUE_DARK
+    p_thanks.font.color.rgb = theme["secondary_accent"]
 
     # Footer
     f_box = s16.shapes.add_textbox(Inches(0.8), Inches(6.85), Inches(11.733), Inches(0.35))
     p = f_box.text_frame.paragraphs[0]
     p.text = "Mid-Term Evaluation Date: November 12, 2026  |  IIIT Ranchi CSE Minor Project"
     p.font.size = Pt(9.5)
-    p.font.color.rgb = TEXT_MUTED
+    p.font.color.rgb = theme["text_muted"]
 
     # Save presentation
-    output_pptx = "presentation.pptx"
-    prs.save(output_pptx)
-    print(f"Faculty defense presentation successfully built and saved to: {output_pptx}")
-    return output_pptx
+    prs.save(output_filename)
+    print(f"Presentation saved successfully to: {output_filename}")
+    return output_filename
 
 
 if __name__ == "__main__":
-    build_faculty_deck()
+    parser = argparse.ArgumentParser(description="Generate Mid-Term Presentation PPTX")
+    parser.add_argument("--theme", choices=["ocean", "forest"], default="ocean", help="Color theme: 'ocean' (default) or 'forest'")
+    parser.add_argument("--output", default="presentation.pptx", help="Output .pptx file path")
+    args = parser.parse_args()
+
+    build_presentation(theme_key=args.theme, output_filename=args.output)
